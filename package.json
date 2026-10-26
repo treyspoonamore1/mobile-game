@@ -12,7 +12,8 @@
     "test": "vitest run",
     "check": "tsc --noEmit && vitest run",
     "balance": "node --experimental-strip-types tools/balance.ts",
-    "shots": "node tools/shots.mjs"
+    "shots": "node tools/shots.mjs",
+    "artifact": "vite build --mode single && node tools/artifact.mjs dist-single/artifact.html"
   },
   "dependencies": {
     "@fontsource/pixelify-sans": "5.3.0",
