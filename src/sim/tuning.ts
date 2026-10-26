@@ -4,11 +4,11 @@ export const T = {
 
   // Floor scaling
   enemyHpBase: 110,
-  enemyHpGrowth: 1.15,
+  enemyHpGrowth: 1.13,
   enemyAtkBase: 9,
-  enemyAtkGrowth: 1.125,
+  enemyAtkGrowth: 1.115,
   goldBase: 3,
-  goldGrowth: 1.14,
+  goldGrowth: 1.135,
   /** Extra multiplier per Depth (each 50 floors). */
   depthHp: 1.6,
   depthAtk: 1.4,
@@ -24,12 +24,12 @@ export const T = {
   reviveOnFloorPct: 0.25,
 
   // Heroes
-  heroLevelHpStep: 0.14,
-  heroLevelAtkStep: 0.14,
+  /** Life and damage multiply by this each level, and double every milestone. */
+  heroLevelGrowth: 1.06,
   heroMilestoneEvery: 25,
   heroMilestoneMult: 2,
   heroCostBase: 6,
-  heroCostGrowth: 1.13,
+  heroCostGrowth: 1.12,
   rageAtFloor: 0.1,
 
   // Player spells

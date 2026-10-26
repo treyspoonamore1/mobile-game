@@ -50,7 +50,7 @@ export interface Loadout {
 
 export function heroLevelMult(level: number): number {
   const milestones = Math.floor(level / T.heroMilestoneEvery);
-  return (1 + T.heroLevelHpStep * (level - 1)) * Math.pow(T.heroMilestoneMult, milestones);
+  return Math.pow(T.heroLevelGrowth, level - 1) * Math.pow(T.heroMilestoneMult, milestones);
 }
 
 /** A % bonus that approaches `cap` with diminishing returns. */

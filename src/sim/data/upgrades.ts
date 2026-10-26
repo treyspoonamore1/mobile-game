@@ -27,7 +27,7 @@ export const GOLD_UPGRADES = [
   { id: 'mana_max', name: 'Deep Well', icon: 'mana', text: '+12% max mana', baseCost: 20, growth: 1.2 },
   { id: 'mana_regen', name: 'Wellspring', icon: 'mana', text: '+12% mana regeneration', baseCost: 30, growth: 1.21 },
   { id: 'chain_power', name: 'Chain Mend', icon: 'chain', text: 'Chain Mend heals more', baseCost: 60, growth: 1.25, unlockFloor: 4 },
-  { id: 'aco_slot', name: 'Ordain Acolyte', icon: 'acolyte', text: 'Another Acolyte joins you', baseCost: 400, growth: 12, max: 4, unlockFloor: 10 },
+  { id: 'aco_slot', name: 'Ordain Acolyte', icon: 'acolyte', text: 'Another Acolyte joins you', baseCost: 250, growth: 6, max: 4, unlockFloor: 10 },
   { id: 'aco_power', name: 'Litany', icon: 'acolyte', text: 'Acolyte spells +15% power', baseCost: 300, growth: 1.24, unlockFloor: 10 },
   { id: 'aco_speed', name: 'Fervor', icon: 'clock', text: 'Acolytes cast 5% faster', baseCost: 500, growth: 1.3, max: 30, unlockFloor: 10 },
 ] as const satisfies readonly UpgradeDef<GoldUpgradeId>[];
