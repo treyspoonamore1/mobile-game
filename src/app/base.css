@@ -1,0 +1,33 @@
+:root {
+  --top-h: calc(46px + env(safe-area-inset-top));
+  --nav-h: calc(64px + env(safe-area-inset-bottom));
+  --bg: #14182e;
+  --bg2: #1d2340;
+  --panel: #262b4d;
+  --panel2: #323a66;
+  --line: #0b0d1a;
+  --text: #f4ecd6;
+  --dim: #9aa0c3;
+  --gold: #ffcf4a;
+  --good: #7ee07e;
+  --bad: #ff6b6b;
+  --mana: #5bb4ff;
+  --ward: #8fd3ff;
+  --devotion: #c48cff;
+  --font: 'Pixelify Sans', system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+  font-family: var(--font); overscroll-behavior: none; touch-action: none;
+  user-select: none; -webkit-user-select: none;
+}
+#stage {
+  position: fixed; left: 0; right: 0; top: var(--top-h); bottom: var(--nav-h);
+  width: 100%; height: calc(100% - var(--top-h) - var(--nav-h));
+  image-rendering: pixelated; touch-action: none; display: block;
+}
+/* The UI layer lets touches through to the canvas except on its own controls. */
+#root { position: fixed; inset: 0; pointer-events: none; }
+#root .interactive, #root button, #root input, #root [data-interactive] { pointer-events: auto; }
