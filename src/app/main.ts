@@ -323,6 +323,33 @@ window.addEventListener('pagehide', () => store(save));
 window.addEventListener('resize', resize);
 window.addEventListener('pointerdown', () => unlockAudio(), { capture: true });
 
+// Keep the screen on while the game is open (idle games are watched).
+let wakeLock: { release(): Promise<void> } | null = null;
+async function keepAwake(): Promise<void> {
+  try {
+    const nav = navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> } };
+    if (!wakeLock && nav.wakeLock && !document.hidden) {
+      wakeLock = await nav.wakeLock.request('screen');
+      document.addEventListener('visibilitychange', () => (wakeLock = null), { once: true });
+    }
+  } catch {
+    wakeLock = null;
+  }
+}
+window.addEventListener('pointerdown', () => void keepAwake(), { capture: true });
+
+// Android back: close the open modal or sheet instead of leaving the app.
+history.pushState({ lifeline: true }, '');
+window.addEventListener('popstate', () => {
+  const m = game.modal.value;
+  if (m && m.kind !== 'welcome' && m.kind !== 'relic') game.closeModal();
+  else if (game.sheet.value) game.openSheet(null);
+  history.pushState({ lifeline: true }, '');
+});
+
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).lifeline = { game, fight: () => fight, renderer };
+}
 render(h(App, { game }), document.getElementById('root')!);
 applySettings();
 resumeFromAway();
