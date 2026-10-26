@@ -1,0 +1,95 @@
+// What the nav shows: which tabs are locked, why, and which have something to do.
+import type { SheetId } from '../app/game.ts';
+import type { Save } from '../meta/save.ts';
+import { canPilgrimage } from '../meta/pilgrimage.ts';
+import { devotionUpgradeCost, goldUpgradeCost, goldUpgradeVisible, heroCost } from '../meta/shop.ts';
+import { HERO_IDS } from '../sim/data/heroes.ts';
+import type { IconName } from '../sim/data/icons.ts';
+import { DEVOTION_UPGRADES, GOLD_UPGRADES, type GoldUpgradeId } from '../sim/data/upgrades.ts';
+import { acolyteSlots } from '../sim/loadout.ts';
+import { T } from '../sim/tuning.ts';
+
+export type TabId = 'fight' | SheetId;
+
+export interface TabDef {
+  id: TabId;
+  label: string;
+  icon: IconName;
+}
+
+export const TABS: readonly TabDef[] = [
+  { id: 'fight', label: 'Fight', icon: 'sword' },
+  { id: 'party', label: 'Party', icon: 'heart' },
+  { id: 'spells', label: 'Spells', icon: 'mend' },
+  { id: 'acolytes', label: 'Acolytes', icon: 'acolyte' },
+  { id: 'relics', label: 'Relics', icon: 'relic' },
+  { id: 'pilgrim', label: 'Pilgrim', icon: 'pilgrim' },
+];
+
+export const SHEET_TITLES: Record<SheetId, string> = {
+  party: 'Party',
+  spells: 'Spells',
+  acolytes: 'Acolytes',
+  relics: 'Relics',
+  pilgrim: 'Pilgrimage',
+};
+
+export function acolytesUnlocked(save: Save): boolean {
+  return acolyteSlots(save.progress) > 0;
+}
+
+export function pilgrimUnlocked(save: Save): boolean {
+  return canPilgrimage(save) || save.pilgrimages > 0;
+}
+
+export function relicsUnlocked(save: Save): boolean {
+  return (
+    save.relicOffers.length > 0 || save.progress.relics.length > 0 || save.pilgrimages > 0 || save.bestFloor > 10
+  );
+}
+
+/** Null when open, otherwise what unlocks it. */
+export function lockReason(save: Save, tab: TabId): string | null {
+  switch (tab) {
+    case 'acolytes':
+      return acolytesUnlocked(save) ? null : `Acolytes join you at floor ${T.acolyteFloorUnlock}`;
+    case 'pilgrim':
+      return pilgrimUnlocked(save) ? null : `Pilgrimage opens at floor ${T.pilgrimageFloor}`;
+    case 'relics':
+      return relicsUnlocked(save) ? null : 'Defeat the floor 10 boss to find relics';
+    default:
+      return null;
+  }
+}
+
+export const isAco = (id: GoldUpgradeId) => id.startsWith('aco_');
+
+function anyGoldAffordable(save: Save, aco: boolean): boolean {
+  return GOLD_UPGRADES.some((u) => {
+    if (isAco(u.id) !== aco || !goldUpgradeVisible(save, u.id)) return false;
+    const c = goldUpgradeCost(save, u.id);
+    return c !== null && c <= save.gold;
+  });
+}
+
+/** A dot badge: something affordable or waiting on that tab. */
+export function hasBadge(save: Save, tab: TabId): boolean {
+  if (lockReason(save, tab)) return false;
+  switch (tab) {
+    case 'party':
+      return HERO_IDS.some((id) => heroCost(id, save.progress.heroLevels[id]) <= save.gold);
+    case 'spells':
+      return anyGoldAffordable(save, false);
+    case 'acolytes':
+      return anyGoldAffordable(save, true);
+    case 'relics':
+      return save.relicOffers.length > 0;
+    case 'pilgrim':
+      return DEVOTION_UPGRADES.some((u) => {
+        const c = devotionUpgradeCost(save, u.id);
+        return c !== null && c <= save.devotion;
+      });
+    default:
+      return false;
+  }
+}

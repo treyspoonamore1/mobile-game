@@ -5,13 +5,13 @@ import type { Fx } from './fx.ts';
 import type { Layout } from './layout.ts';
 
 const HERO_SLOTS = [
-  { fx: 0.43, dy: 1 }, // Tomas
-  { fx: 0.34, dy: 7 }, // Brann
-  { fx: 0.16, dy: 4 }, // Ilse
-  { fx: 0.25, dy: -5 }, // Wren
+  { fx: 0.47, dy: 1 }, // Tomas
+  { fx: 0.38, dy: 7 }, // Brann
+  { fx: 0.21, dy: 4 }, // Ilse
+  { fx: 0.3, dy: -5 }, // Wren
 ];
 const ENEMY_SLOTS = [
-  { fx: 0.62, dy: 3 }, { fx: 0.73, dy: -5 }, { fx: 0.83, dy: 6 }, { fx: 0.93, dy: -2 },
+  { fx: 0.64, dy: 3 }, { fx: 0.74, dy: -5 }, { fx: 0.84, dy: 6 }, { fx: 0.93, dy: -2 },
 ];
 
 export interface SceneState {
@@ -38,7 +38,7 @@ export function enemyPos(L: Layout, s: FightState, i: number): { x: number; y: n
 }
 
 export function healerPos(L: Layout): { x: number; y: number } {
-  return { x: Math.round(L.artW * 0.07), y: groundY(L) + 2 };
+  return { x: Math.round(L.artW * 0.11), y: groundY(L) + 2 };
 }
 
 const silhouettes = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
@@ -119,9 +119,11 @@ export function drawScene(g: CanvasRenderingContext2D, L: Layout, s: FightState,
 
   // Acolytes and the healer behind the party.
   const hp = healerPos(L);
+  // Acolytes stand in a row behind the party, a second row in front if there are many.
   s.acolytes.forEach((a, i) => {
-    const ax = hp.x - 3 + (i % 2) * 9 - Math.floor(i / 2) * 4;
-    const ay = groundY(L) - 9 + (i % 2) * 18 + Math.floor(i / 2) * 2;
+    const back = i < 4;
+    const ax = 5 + (back ? i : i - 4) * 8 + (back ? 0 : 4);
+    const ay = groundY(L) + (back ? -12 : 12);
     const casting = s.t - a.castAt < 0.25;
     drawSprite(g, 'acolyte', casting ? 'cast' : 'idle', Math.floor(now * 2 + i * 0.5), ax, ay);
     if (casting) px(g, ax - 1, ay - 14, 2, 2, '#fff2a8');

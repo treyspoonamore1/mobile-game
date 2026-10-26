@@ -11,7 +11,7 @@ mkdirSync(out, { recursive: true });
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 412, height: 915 }, deviceScaleFactor: 2.625, isMobile: true, hasTouch: true });
-const page = await ctx.newPage();
+let page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
@@ -38,18 +38,29 @@ for (let i = 0; i < 40; i++) {
 }
 await shot('03-playing');
 
-// A mid-game save.
-await page.evaluate(() => {
+// A mid-game save, injected before the app loads (a reload would overwrite it on pagehide).
+const mid = await page.evaluate(() => {
   const s = JSON.parse(localStorage.getItem('lifeline-save-v1'));
   s.floor = 23; s.bestFloor = 31; s.gold = 125000; s.progress.maxFloor = 31;
   s.progress.heroLevels = { tomas: 30, brann: 29, ilse: 28, wren: 29 };
   s.progress.upgrades = { mend_power: 8, ward_power: 5, aco_slot: 2, aco_power: 6 };
   s.progress.relics = ['sunstone', 'bell_of_dawn', 'war_banner'];
+  s.progress.acolytes = ['mend_lowest', 'ward_tank', 'ward_telegraphed'];
   s.tutorial = { welcome: true, tap: true, hold: true, swipe: true, revive: true, sanctuary: true, levelup: true, relics: true, perfect: true };
   s.lastSeen = Date.now();
-  localStorage.setItem('lifeline-save-v1', JSON.stringify(s));
+  return JSON.stringify(s);
 });
-await page.reload();
+await page.close();
+const page2 = await ctx.newPage();
+page2.on('pageerror', (e) => errors.push(String(e)));
+await page2.addInitScript((json) => {
+  if (!sessionStorage.getItem('seeded')) {
+    localStorage.setItem('lifeline-save-v1', json);
+    sessionStorage.setItem('seeded', '1');
+  }
+}, mid);
+page = page2;
+await page.goto(url);
 await page.waitForTimeout(3500);
 await shot('04-midgame');
 for (const tab of ['Party', 'Spells', 'Acolytes', 'Relics', 'Pilgrim']) {

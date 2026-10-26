@@ -1,8 +1,4 @@
-import '@fontsource/pixelify-sans/400.css';
-import '@fontsource/pixelify-sans/600.css';
-import '@fontsource/pixelify-sans/700.css';
 import './base.css';
-import '../ui/ui.css';
 import { signal } from '@preact/signals';
 import { h, render } from 'preact';
 import { setHapticsEnabled, setMusic, setMuted, setVolumes, unlockAudio, playSfx, haptic, type MusicTrack } from '../audio/index.ts';

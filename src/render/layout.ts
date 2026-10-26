@@ -15,11 +15,11 @@ export interface Layout {
 
 const PAD = 10;
 const GAP = 6;
-const ART_MIN_W = 180;
+const ART_MIN_W = 150;
 
 export function computeLayout(cssW: number, cssH: number, dpr: number): Layout {
-  const frameH = Math.round(Math.max(54, Math.min(72, cssH * 0.085)));
-  const manaH = Math.round(Math.max(44, Math.min(54, cssH * 0.062)));
+  const frameH = Math.round(Math.max(56, Math.min(84, cssH * 0.092)));
+  const manaH = Math.round(Math.max(46, Math.min(58, cssH * 0.064)));
   const bottomH = PAD + 4 * frameH + 3 * GAP + GAP + manaH + PAD;
   const sceneH = Math.max(120, cssH - bottomH);
   const devW = cssW * dpr;
