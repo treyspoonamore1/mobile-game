@@ -131,6 +131,20 @@ export function drawScene(g: CanvasRenderingContext2D, L: Layout, s: FightState,
   const lastCast = Math.max(...s.heroes.map((h) => h.healAt));
   const healerCasting = s.t - lastCast < 0.25;
   drawSprite(g, `healer_${s.loadout.order}`, healerCasting ? 'cast' : 'idle', Math.floor(now * (walking ? 6 : 2)), hp.x, hp.y + (walking ? Math.round(Math.abs(Math.sin(now * 10))) * -1 : 0));
+  if (healerCasting) {
+    // A flare at the staff tip (or above the lute) while casting.
+    const k = 1 - (s.t - lastCast) / 0.25;
+    const tx = hp.x - 8 + (s.loadout.order === 'bard' ? 10 : 12);
+    const ty = hp.y - 16 + (s.loadout.order === 'bard' ? 3 : 1);
+    const c = s.loadout.order === 'chrono' ? '#9ff0ff' : s.loadout.order === 'bard' ? '#ffc2f0' : '#fff2a8';
+    g.save();
+    g.globalAlpha = k;
+    px(g, tx - 1, ty - 3, 2, 7, c);
+    px(g, tx - 3, ty - 1, 6, 2, c);
+    g.globalAlpha = k * 0.35;
+    px(g, tx - 3, ty - 3, 6, 6, c);
+    g.restore();
+  }
 
   // Draw back to front by y.
   const order = s.heroes.map((_, i) => i).sort((a, b) => heroPos(L, a).y - heroPos(L, b).y);
