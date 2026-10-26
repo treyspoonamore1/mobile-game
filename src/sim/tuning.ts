@@ -3,18 +3,18 @@ export const T = {
   tickRate: 60,
 
   // Floor scaling
-  enemyHpBase: 110,
-  enemyHpGrowth: 1.13,
-  enemyAtkBase: 9,
-  enemyAtkGrowth: 1.115,
-  goldBase: 6,
-  goldGrowth: 1.135,
+  enemyHpBase: 140,
+  enemyHpGrowth: 1.125,
+  enemyAtkBase: 10,
+  enemyAtkGrowth: 1.125,
+  goldBase: 10,
+  goldGrowth: 1.12,
   /** Extra multiplier per Depth (each 50 floors). */
   depthHp: 1.6,
   depthAtk: 1.4,
   depthGold: 1.5,
   /** Boss floors: life and attack multiplier on top of the boss's own. */
-  bossFloorMult: 1,
+  bossFloorMult: 0.75,
   /** Extra multiplier on boss life only (bosses are a check on damage, not just survival). */
   bossHpMult: 0.6,
   /**
@@ -23,14 +23,28 @@ export const T = {
    */
   packNormalize: 1,
   packHpUnits: 3,
+  /** Attack budget, in units of basicAttackRate (a Skeleton: 1/1.5 s basic + 4x every 7 s). */
   packAtkUnits: 2.6,
+  basicAttackRate: 1.24,
+  /** Attacks that hit the whole party count this many times in a damage budget. */
+  partyAttackWeight: 2,
+  /** A boss's damage budget (before bossFloorMult), in the same units. */
+  bossThreat: 1.8,
   packGoldUnits: 3,
   /** Budget ramp inside a region: floor x1 gets packRampStart, each later floor adds packRampPerFloor. */
   packRampStart: 0.8,
   packRampPerFloor: 0.04,
+  /** Most budget units a floor in the first region can have. */
+  tutorialUnits: 2.4,
+  /** Life multiplier for enemies in the first region (floors 1-10). */
+  tutorialHpMult: 1.45,
   /** Budget for the adds beside a boss. */
   bossAddUnits: 1,
   checkpointEvery: 5,
+  /** Enrage: after this many seconds on a floor (bosses: enrageAfterBoss), enemy damage grows by enrageRamp/s. */
+  enrageAfter: 45,
+  enrageAfterBoss: 90,
+  enrageRamp: 0.05,
 
   // Floor flow
   walkTime: 1.4,
@@ -44,7 +58,7 @@ export const T = {
   heroMilestoneEvery: 25,
   heroMilestoneMult: 2,
   heroCostBase: 6,
-  heroCostGrowth: 1.15,
+  heroCostGrowth: 1.18,
   rageAtFloor: 0.1,
 
   // Player spells
@@ -78,6 +92,23 @@ export const T = {
   acolyteInterval: 2.6,
   acolytePotency: 0.55,
   acolyteFloorUnlock: 10,
+  acolyteSpeedPerLevel: 0.95,
+  /** Caps that Litany (Acolyte power), Deep Well and Wellspring approach with diminishing returns. */
+  acolytePowerCap: 3,
+  manaMaxCap: 2.5,
+  manaRegenCap: 3,
+
+  // Devotion upgrades (per level)
+  mightPerLevel: 1.2,
+  fortunePerLevel: 1.3,
+  gracePerLevel: 0.1,
+  spiritPerLevel: 0.2,
+
+  // Relics
+  /** Tithe Ring: gold per Save, in basic-enemy kills of the current floor. */
+  titheKills: 0.5,
+  /** Thorn Amulet: share of what a Ward absorbs (or a Perfect blocks) dealt back to the attacker. */
+  thornReflect: 0.1,
 
   // Poison
   cleanseHealPct: 0.05,
@@ -90,4 +121,7 @@ export const T = {
 
   // Pilgrimage
   pilgrimageFloor: 25,
+  /** Devotion from a Pilgrimage at pilgrimageFloor, and its growth per floor deeper. */
+  devotionBase: 8,
+  devotionGrowth: 1.045,
 } as const;

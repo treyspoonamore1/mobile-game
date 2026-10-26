@@ -1,7 +1,7 @@
 import { enemyDef, type Targeting } from './data/enemies.ts';
 import { isBossFloor } from './data/regions.ts';
 import { aliveHeroes, damageEnemy, damageHero, lifeFrac } from './combat.ts';
-import { checkpointOf, floorAtk, floorGold, floorHp, floorPack } from './floors.ts';
+import { floorAtk, floorGold, floorHp, floorPack, wipeCheckpoint } from './floors.ts';
 import type { Loadout } from './loadout.ts';
 import { chance, makeRng, next, pick } from './rng.ts';
 import { applyAction, stepAcolytes } from './spells.ts';
@@ -90,6 +90,7 @@ export function step(s: FightState, actions: readonly Action[] = [], dt = DT): S
     s.phaseT -= dt;
     if (s.phaseT <= 0) restartAfterWipe(s);
   } else {
+    s.phaseT += dt;
     stepHeroAttacks(s, dt);
     stepEnemies(s, dt);
     stepAcolytes(s, dt);
@@ -211,16 +212,27 @@ function hit(
 ): void {
   const e = s.enemies[ei]!;
   const h = s.heroes[i]!;
-  const connected = damageHero(s, i, e.atk * mult, { enemy: ei, big, dodgeable: !big });
+  const atk = e.atk * enrageMult(s);
+  const connected = damageHero(s, i, atk * mult, { enemy: ei, big, dodgeable: !big });
   if (poison && connected && h.alive) {
-    h.poisonDps = Math.max(h.poisonT > 0 ? h.poisonDps : 0, e.atk * poison.dps);
+    h.poisonDps = Math.max(h.poisonT > 0 ? h.poisonDps : 0, atk * poison.dps);
     h.poisonT = Math.max(h.poisonT, poison.dur);
   }
 }
 
+/**
+ * Enemies grow stronger the longer a floor lasts, so a fight always ends: a party that can't kill fast enough
+ * (say, a lone tank kept alive by Acolytes) eventually wipes and restarts whole from a checkpoint.
+ */
+export function enrageMult(s: FightState): number {
+  if (s.phase !== 'fight') return 1;
+  const after = isBossFloor(s.floor) ? T.enrageAfterBoss : T.enrageAfter;
+  return 1 + T.enrageRamp * Math.max(0, s.phaseT - after);
+}
+
 function checkFloorEnd(s: FightState): void {
   if (aliveHeroes(s).length === 0) {
-    const cp = checkpointOf(s.floor);
+    const cp = wipeCheckpoint(s.floor);
     s.stats.wipes++;
     s.events.push({ type: 'wipe', floor: s.floor, checkpoint: cp });
     s.phase = 'wipe';
@@ -246,7 +258,7 @@ function checkFloorEnd(s: FightState): void {
 }
 
 function restartAfterWipe(s: FightState): void {
-  s.floor = checkpointOf(s.floor);
+  s.floor = wipeCheckpoint(s.floor);
   s.mana = s.loadout.manaMax;
   s.resonance = 0;
   for (const h of s.heroes) {

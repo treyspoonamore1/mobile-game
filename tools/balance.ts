@@ -1,6 +1,6 @@
 // Headless playthrough: a bot fights, shops and goes on Pilgrimages. Prints a progression timeline.
 //   npm run balance -- [--hours 6] [--bot skilled|novice|idle] [--every 30] [--seed 1] [--active 0.3] [--quiet]
-import { pilgrimage, devotionFor, canPilgrimage, orderUnlocked, startFloor } from '../src/meta/pilgrimage.ts';
+import { pilgrimage, devotionFor, canPilgrimage, startFloor } from '../src/meta/pilgrimage.ts';
 import { floorGold } from '../src/sim/floors.ts';
 import { newSave, type Save } from '../src/meta/save.ts';
 import { applyEvents, newFight, pickRelic, refreshLoadout } from '../src/meta/session.ts';
@@ -10,6 +10,7 @@ import {
 import { idleBot, noviceBot, skilledBot, type Bot } from '../src/sim/bots.ts';
 import { HERO_IDS } from '../src/sim/data/heroes.ts';
 import { PRAYERS, type PrayerId } from '../src/sim/data/prayers.ts';
+import type { RelicId } from '../src/sim/data/relics.ts';
 import { DEVOTION_UPGRADES, GOLD_UPGRADES, type DevotionUpgradeId } from '../src/sim/data/upgrades.ts';
 import { DT, step } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
@@ -24,15 +25,30 @@ const hours = Number(arg('hours', '6'));
 const every = Number(arg('every', '30')) * 60;
 const botName = arg('bot', 'skilled');
 const quiet = args.includes('--quiet');
-/** After acolytes arrive the player taps less: fraction of time still playing actively. */
+/** Once past the first walls (best floor >= LATE_FLOOR) the player taps less: fraction of time still active. */
 const activeLate = Number(arg('active', '0.3'));
+const LATE_FLOOR = 40;
 const noPilgrimage = args.includes('--no-pilgrimage');
 // Tuning experiments without editing files: --set heroCostGrowth=1.2,goldGrowth=1.1
 for (const kv of arg('set', '').split(',').filter(Boolean)) {
   const [k, v] = kv.split('=');
   (T as unknown as Record<string, number>)[k!] = Number(v);
 }
-const makeBot = (): Bot => (botName === 'idle' ? idleBot : botName === 'novice' ? noviceBot() : skilledBot());
+/** A casual player: the novice bot, but they also tap a fallen hero's grey frame when they have the mana. */
+function casualBot(): Bot {
+  const base = noviceBot();
+  let cd = 0;
+  return (s) => {
+    cd -= DT;
+    const down = s.heroes.findIndex((h) => !h.alive);
+    if (s.phase === 'fight' && down >= 0 && cd <= 0 && s.mana >= T.reviveCost && s.heroes.some((h) => h.alive)) {
+      cd = 1.5;
+      return [{ kind: 'mend', hero: down }];
+    }
+    return base(s);
+  };
+}
+const makeBot = (): Bot => (botName === 'idle' ? idleBot : botName === 'novice' ? casualBot() : skilledBot());
 
 const PRAYER_PRIORITY: PrayerId[] = ['mend_lowest', 'ward_telegraphed', 'top_up', 'ward_tank', 'cleanse', 'mend_all', 'revive', 'mend_tank'];
 
@@ -41,6 +57,16 @@ function assignPrayers(save: Save): void {
   const n = acolyteSlots(save.progress);
   for (let i = 0; i < n; i++) save.progress.acolytes[i] = unlocked[i % unlocked.length]!;
 }
+
+/** Relic preference, strongest first (measured with tools/probe.ts --relics); unknown ones go last. */
+const RELIC_PREFERENCE: RelicId[] = [
+  'thorn_amulet', 'star_gem', 'war_banner', 'crown', 'iron_vow', 'rosary', 'tithe_ring', 'candle', 'phoenix',
+  'warding_orb', 'resonant_bell', 'tome_of_echoes', 'chalice', 'quill', 'hourglass', 'bell_of_dawn', 'sunstone', 'blood_totem',
+];
+const relicRank = (id: RelicId) => {
+  const i = RELIC_PREFERENCE.indexOf(id);
+  return i < 0 ? RELIC_PREFERENCE.length : i;
+};
 
 /** Greedy shopper: buy the cheapest useful thing until nothing is affordable. */
 function shop(save: Save): boolean {
@@ -69,7 +95,7 @@ function shop(save: Save): boolean {
  * player would value it (Might and Fortune are the workhorses).
  */
 const DEVOTION_WEIGHT: Partial<Record<DevotionUpgradeId, number>> = {
-  might: 0.5, fortune: 0.7, haste: 0.6, choir: 0.6, grace: 0.9, spirit: 1.2, vigil: 2, insight: 1.5, order_chrono: 1, order_bard: 3,
+  might: 0.5, fortune: 0.7, haste: 0.6, choir: 0.6, grace: 0.9, spirit: 1.2, vigil: 4, insight: 1.5, order_chrono: 1, order_bard: 3,
 };
 function shopDevotion(save: Save): void {
   for (let guard = 0; guard < 400; guard++) {
@@ -85,12 +111,14 @@ function shopDevotion(save: Save): void {
  * When to go on Pilgrimage: only when this run has stopped climbing, and the gain is worth it relative to
  * all the Devotion earned so far. The longer the player is stuck, the smaller a gain they accept.
  */
-function wantsPilgrimage(save: Save, stuckFor: number, earned: number): boolean {
+function wantsPilgrimage(save: Save, stuckFor: number, earned: number, prevRunMax: number): boolean {
   if (noPilgrimage || !canPilgrimage(save)) return false;
   const gain = devotionFor(save.progress.maxFloor);
   if (gain <= 0) return false;
   const min = stuckFor / 60;
   if (min < 8) return false;
+  // Don't reset short of the last run's depth unless truly stuck.
+  if (save.progress.maxFloor < prevRunMax && min < 60) return false;
   const need = min >= 45 ? 0.15 : min >= 20 ? 0.3 : 0.6;
   return gain >= need * earned;
 }
@@ -120,6 +148,8 @@ let lastBest = 1;
 let nextReport = 0;
 let firstWipe = 0;
 const end = hours * 3600;
+/** Print the save's progress at these minutes (feed it to tools/probe.ts --progress). */
+const dumpAt = arg('dump', '').split(',').filter(Boolean).map(Number);
 const milestones = new Map<number, number>();
 const fmt = (n: number) => (n >= 1e6 ? n.toExponential(2) : n.toFixed(0));
 const mins = (s: number) => `${(s / 60).toFixed(1)}m`;
@@ -127,13 +157,18 @@ const mins = (s: number) => `${(s / 60).toFixed(1)}m`;
 console.log(`bot=${botName} active-late=${activeLate} hours=${hours}`);
 if (!quiet) console.log('time    floor  max  best  gold       lvls(T/B/I/W)     acos pilg dev  relics wipes');
 while (t < end) {
-  const lateGame = acolyteSlots(save.progress) > 0;
+  // Players keep healing by hand through the first walls; later (Acolytes carry the routine) they only
+  // play actively part of the time.
+  const lateGame = save.bestFloor >= LATE_FLOOR && acolyteSlots(save.progress) > 0;
   const active = !lateGame || ((t / 60) % 10) / 10 < activeLate;
   const events = step(fight, active ? bot(fight) : [], DT);
   t += DT;
   applyEvents(save, fight, events, DT);
   if (!firstWipe) for (const e of events) if (e.type === 'wipe') firstWipe = e.floor;
-  while (save.relicOffers.length > 0) pickRelic(save, save.relicOffers[0]![0]!);
+  while (save.relicOffers.length > 0) {
+    const offer = save.relicOffers[0]!;
+    pickRelic(save, [...offer].sort((a, b) => relicRank(a) - relicRank(b))[0]!);
+  }
   if (save.progress.maxFloor > runMax) {
     runMax = save.progress.maxFloor;
     runMaxAt = t;
@@ -147,8 +182,9 @@ while (t < end) {
     lastShop = t;
     assignPrayers(save);
     if (shop(save)) refreshLoadout(save, fight);
-    if (wantsPilgrimage(save, t - runMaxAt, earned)) {
-      const order = orderUnlocked(save, 'chrono') && save.pilgrimages % 2 === 1 ? 'chrono' : 'cleric';
+    if (wantsPilgrimage(save, t - runMaxAt, earned, prevRunMax)) {
+      // The bots are written for the Cleric (hold = Ward); a player sticks with the Order they play best.
+      const order = 'cleric';
       const from = save.progress.maxFloor;
       const gain = pilgrimage(save, order);
       earned += gain;
@@ -165,6 +201,10 @@ while (t < end) {
       runMaxAt = t;
       regainedAt = -1;
     }
+  }
+  if (dumpAt.length && t >= dumpAt[0]! * 60) {
+    dumpAt.shift();
+    console.log(`DUMP ${mins(t)} floor ${fight.floor} ${JSON.stringify(save.progress)}`);
   }
   if (!quiet && t >= nextReport) {
     nextReport += every;

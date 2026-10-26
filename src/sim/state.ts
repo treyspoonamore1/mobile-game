@@ -83,6 +83,7 @@ export interface FightState {
   floor: number;
   autoAdvance: boolean;
   phase: Phase;
+  /** Walk and wipe: seconds left. Fight: seconds since the floor started (drives the enrage). */
   phaseT: number;
   heroes: HeroState[];
   enemies: EnemyState[];

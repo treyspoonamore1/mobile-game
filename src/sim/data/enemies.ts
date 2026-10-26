@@ -47,11 +47,11 @@ export const ENEMIES = [
     attacks: [{ name: 'Ooze', mult: 0.6, interval: 2, target: 'random', windup: 0, poison: { dps: 0.5, dur: 5 } }],
   },
   {
-    id: 'bone_knight', name: 'The Bone Knight', hp: 14, atk: 1.4, gold: 12, boss: true,
+    id: 'bone_knight', name: 'The Bone Knight', hp: 10, atk: 1.4, gold: 12, boss: true,
     attacks: [
-      basic(1.4),
-      { name: 'Cleave', mult: 5, interval: 8, target: 'taunt', windup: 1.8 },
-      { name: 'Bone Storm', mult: 2, interval: 11, target: 'all', windup: 2.2 },
+      basic(1.8),
+      { name: 'Cleave', mult: 6, interval: 8, target: 'taunt', windup: 1.8 },
+      { name: 'Bone Storm', mult: 2.5, interval: 11, target: 'all', windup: 2.2 },
     ],
   },
   // Fungal Hollow
@@ -87,10 +87,10 @@ export const ENEMIES = [
     attacks: [basic(1.6, 'backline'), { name: 'Blizzard', mult: 1.2, interval: 7, target: 'all', windup: 1.8 }],
   },
   {
-    id: 'frost_wyrm', name: 'The Frost Wyrm', hp: 16, atk: 1.4, gold: 14, boss: true,
+    id: 'frost_wyrm', name: 'The Frost Wyrm', hp: 12, atk: 1.4, gold: 14, boss: true,
     attacks: [
       basic(1.5),
-      { name: 'Frost Breath', mult: 2.5, interval: 10, target: 'all', windup: 2.5 },
+      { name: 'Frost Breath', mult: 2, interval: 10, target: 'all', windup: 2.5 },
       { name: 'Tail Lash', mult: 5, interval: 6, target: 'random', windup: 1.6 },
     ],
   },
@@ -108,10 +108,10 @@ export const ENEMIES = [
     ],
   },
   {
-    id: 'forge_tyrant', name: 'The Forge Tyrant', hp: 17, atk: 1.5, gold: 15, boss: true,
+    id: 'forge_tyrant', name: 'The Forge Tyrant', hp: 14, atk: 1.3, gold: 15, boss: true,
     attacks: [
       basic(1.3),
-      { name: 'Hammerfall', mult: 6, interval: 7, target: 'taunt', windup: 1.8 },
+      { name: 'Hammerfall', mult: 5, interval: 7, target: 'taunt', windup: 1.8 },
       { name: 'Slag Wave', mult: 1.8, interval: 9, target: 'all', windup: 2, poison: { dps: 0.3, dur: 4 } },
       { name: 'Brand', mult: 4, interval: 11, target: 'backline', windup: 1.4 },
     ],
@@ -135,7 +135,7 @@ export const ENEMIES = [
     attacks: [
       basic(1.2, 'lowest'),
       { name: 'Oblivion', mult: 3, interval: 12, target: 'all', windup: 2.6 },
-      { name: 'Execute', mult: 7, interval: 7, target: 'lowest', windup: 1.6 },
+      { name: 'Execute', mult: 6, interval: 7, target: 'lowest', windup: 1.6 },
       { name: 'Wither', mult: 0.3, interval: 9, target: 'all', windup: 1.5, poison: { dps: 0.5, dur: 5 } },
     ],
   },

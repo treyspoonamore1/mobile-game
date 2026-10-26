@@ -1,3 +1,4 @@
+import { floorGold } from './floors.ts';
 import { chance } from './rng.ts';
 import type { FightState, HeroState, SpellKind } from './state.ts';
 import { T } from './tuning.ts';
@@ -44,7 +45,7 @@ export function damageHero(s: FightState, i: number, raw: number, src: HitSource
   h.shield -= absorbed;
   dmg -= absorbed;
   s.stats.absorbed += absorbed;
-  if (absorbed > 0 && s.loadout.relics.has('thorn_amulet')) damageEnemy(s, src.enemy, absorbed * 1.5, false, -1);
+  if (absorbed > 0 && s.loadout.relics.has('thorn_amulet')) damageEnemy(s, src.enemy, absorbed * T.thornReflect, false, -1);
 
   const before = h.hp;
   if (src.big) {
@@ -74,7 +75,8 @@ export function damageHero(s: FightState, i: number, raw: number, src: HitSource
     addResonance(s, T.resonanceSave);
     s.events.push({ type: 'save', hero: i });
     if (s.loadout.relics.has('tithe_ring')) {
-      const g = averageEnemyGold(s) * 3;
+      // Worth one basic enemy of this floor (not the boss), so Acolyte-driven Saves can't flood the economy.
+      const g = Math.max(1, Math.round(floorGold(s.floor) * s.loadout.goldMult * T.titheKills));
       s.stats.gold += g;
       s.events.push({ type: 'gold', amount: g });
     }
@@ -90,7 +92,7 @@ function perfect(s: FightState, i: number, blocked: number, enemy: number): void
   s.mana = Math.min(s.loadout.manaMax, s.mana + s.loadout.wardCost);
   addResonance(s, T.resonancePerfect);
   s.events.push({ type: 'perfect', hero: i, streak: s.perfectStreak, blocked });
-  if (s.loadout.relics.has('thorn_amulet')) damageEnemy(s, enemy, blocked * 1.5, false, -1);
+  if (s.loadout.relics.has('thorn_amulet')) damageEnemy(s, enemy, blocked * T.thornReflect, false, -1);
   if (s.loadout.relics.has('bell_of_dawn')) {
     for (const j of aliveHeroes(s)) healHero(s, j, s.heroes[j]!.stats.maxHp * 0.15, 'player', 'mend');
   }
@@ -173,11 +175,6 @@ export function damageEnemy(s: FightState, ei: number, amount: number, crit: boo
     s.events.push({ type: 'enemyDie', enemy: ei, gold: e.gold });
     s.events.push({ type: 'gold', amount: e.gold });
   }
-}
-
-function averageEnemyGold(s: FightState): number {
-  if (s.enemies.length === 0) return 0;
-  return s.enemies.reduce((a, e) => a + e.gold, 0) / s.enemies.length;
 }
 
 export function lifeFrac(h: HeroState): number {

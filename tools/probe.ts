@@ -5,6 +5,7 @@
 import { idleBot, noviceBot, skilledBot, type Bot } from '../src/sim/bots.ts';
 import type { DevotionUpgradeId, GoldUpgradeId } from '../src/sim/data/upgrades.ts';
 import type { PrayerId } from '../src/sim/data/prayers.ts';
+import { RELICS, type RelicId } from '../src/sim/data/relics.ts';
 import { createFight, step } from '../src/sim/fight.ts';
 import { floorGold } from '../src/sim/floors.ts';
 import { buildLoadout } from '../src/sim/loadout.ts';
@@ -38,8 +39,10 @@ const progress = freshProgress({
   devotionUpgrades: kv(arg('dev', '')) as Partial<Record<DevotionUpgradeId, number>>,
   acolytes: ACO_ORDER.slice(0, acos),
   maxFloor: acos > 0 ? 99 : 1,
+  relics: (arg('relics', '') === 'all' ? RELICS.map((r) => r.id) : arg('relics', '').split(',').filter(Boolean)) as RelicId[],
 });
-const loadout = buildLoadout(progress);
+// --progress '<json>' probes an exact state dumped by tools/balance.ts --dump.
+const loadout = buildLoadout(args.includes('--progress') ? (JSON.parse(arg('progress', '{}')) as typeof progress) : progress);
 const bots: Record<string, () => Bot> = { idle: () => idleBot, novice: () => noviceBot(), skilled: () => skilledBot() };
 
 /** Can this bot clear segment [cp, cp+5) with heroes scaled by `power`, in all tries? */
@@ -65,9 +68,9 @@ if (args.includes('--need')) {
   for (let cp = SEG === 1 ? from : from - ((from - 1) % SEG); cp <= to; cp += SEG) {
     const cells: string[] = [];
     for (const name of botNames) {
-      let lo = Math.log(prev[name] ?? 0.05) - 2;
-      let hi = lo + 8;
-      for (let it = 0; it < 14; it++) {
+      let lo = prev[name] ? Math.log(prev[name]!) - 2 : Math.log(0.01);
+      let hi = prev[name] ? lo + 8 : Math.log(1e4);
+      for (let it = 0; it < 16; it++) {
         const mid = (lo + hi) / 2;
         if (clears(name, cp, Math.exp(mid))) hi = mid;
         else lo = mid;

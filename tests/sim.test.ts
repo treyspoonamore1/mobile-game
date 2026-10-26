@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { skilledBot } from '../src/sim/bots.ts';
 import { damageHero, healHero } from '../src/sim/combat.ts';
-import { createFight, step } from '../src/sim/fight.ts';
-import { checkpointOf, floorEnemies } from '../src/sim/floors.ts';
+import { devotionFor } from '../src/meta/pilgrimage.ts';
+import { createFight, enrageMult, step } from '../src/sim/fight.ts';
+import { checkpointOf, floorEnemies, floorPack, wipeCheckpoint } from '../src/sim/floors.ts';
 import { hashFight } from '../src/sim/hash.ts';
 import { buildLoadout } from '../src/sim/loadout.ts';
 import { BEAT_PERIOD } from '../src/sim/spells.ts';
 import type { FightState } from '../src/sim/state.ts';
+import { T } from '../src/sim/tuning.ts';
 import { freshProgress } from './helpers.ts';
 
 function fight(over = {}, floor = 1): FightState {
@@ -38,6 +40,46 @@ describe('fight', () => {
     expect(checkpointOf(5)).toBe(1);
     expect(checkpointOf(6)).toBe(6);
     expect(checkpointOf(14)).toBe(11);
+    // Falling on a checkpoint floor itself sends you one checkpoint further back, so you can farm.
+    expect(wipeCheckpoint(14)).toBe(11);
+    expect(wipeCheckpoint(11)).toBe(6);
+    expect(wipeCheckpoint(1)).toBe(1);
+  });
+});
+
+describe('balance levers', () => {
+  it('normal floors after the first region share one life budget, whatever their enemies', () => {
+    for (const floor of [21, 34, 57, 88]) {
+      const local = ((floor - 1) % 10) + 1;
+      const budget = T.packHpUnits * (T.packRampStart + T.packRampPerFloor * (local - 1));
+      for (const seed of [1, 2, 3]) {
+        const total = floorPack(floor, seed).reduce((a, m) => a + m.hp, 0);
+        expect(total).toBeCloseTo(budget, 6);
+      }
+    }
+  });
+
+  it('enemies enrage when a floor drags on', () => {
+    const s = fight({}, 3);
+    expect(enrageMult(s)).toBe(1);
+    s.phaseT = T.enrageAfter + 10;
+    expect(enrageMult(s)).toBeCloseTo(1 + 10 * T.enrageRamp, 6);
+  });
+
+  it('Devotion starts at the Pilgrimage floor and grows with depth', () => {
+    expect(devotionFor(T.pilgrimageFloor - 1)).toBe(0);
+    expect(devotionFor(T.pilgrimageFloor)).toBeGreaterThan(0);
+    expect(devotionFor(100)).toBeGreaterThan(devotionFor(50));
+  });
+
+  it('Tithe Ring pays a little whole gold per Save', () => {
+    const s = fight({ relics: ['tithe_ring'] }, 5);
+    const h = s.heroes[2]!;
+    h.hp = 5;
+    healHero(s, 2, 20, 'player', 'mend');
+    damageHero(s, 2, h.hp - 1, { enemy: 0, big: false, dodgeable: false });
+    const gold = s.events.find((e) => e.type === 'gold');
+    expect(gold && gold.type === 'gold' && Number.isInteger(gold.amount) && gold.amount >= 1).toBe(true);
   });
 });
 

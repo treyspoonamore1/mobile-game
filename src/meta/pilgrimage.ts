@@ -4,9 +4,14 @@ import { floorGold } from '../sim/floors.ts';
 import { T } from '../sim/tuning.ts';
 import { emptyTally, type Save } from './save.ts';
 
+/**
+ * Devotion for a Pilgrimage from `maxFloor`: grows by a fixed factor per floor. Each Devotion upgrade buys a
+ * roughly fixed number of floors per doubling of total Devotion, so a factor well below e^(1/that) keeps
+ * every Pilgrimage meaningfully deeper without ever running away. See docs/BALANCE.md.
+ */
 export function devotionFor(maxFloor: number): number {
   if (maxFloor < T.pilgrimageFloor) return 0;
-  return Math.floor(Math.pow((maxFloor - 10) / 4, 1.7));
+  return Math.floor(T.devotionBase * Math.pow(T.devotionGrowth, maxFloor - T.pilgrimageFloor));
 }
 
 export function canPilgrimage(save: Save): boolean {

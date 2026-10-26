@@ -1,4 +1,6 @@
 import { isBossFloor, regionOf } from '../sim/data/regions.ts';
+import { enrageMult } from '../sim/fight.ts';
+import { T } from '../sim/tuning.ts';
 import type { FightState, SimEvent } from '../sim/state.ts';
 import { getFrames } from './art/index.ts';
 import { drawFrames, newFrameAnim, updateFrameAnim, type FrameAnim, type InputView } from './frames.ts';
@@ -282,6 +284,19 @@ export class Renderer {
   }
 
   private drawHud(g: CanvasRenderingContext2D, s: FightState, L: Layout): void {
+    if (s.phase === 'fight') {
+      // Enrage: a countdown in the last 10 s, then the growing damage multiplier.
+      const after = isBossFloor(s.floor) ? T.enrageAfterBoss : T.enrageAfter;
+      const left = after - s.phaseT;
+      const y = isBossFloor(s.floor) ? 58 : 18;
+      const mult = enrageMult(s);
+      if (mult > 1) {
+        const pulse = 0.6 + 0.4 * Math.sin(this.scene.now * 10);
+        drawText(g, `ENRAGED ×${mult.toFixed(1)}`, 12, y, { size: 14, color: '#ff5a5a', outline: '#0b0d1a', outlineW: 4, alpha: pulse, weight: 700 });
+      } else if (left <= 10) {
+        drawText(g, `Enrage in ${Math.ceil(left)}s`, 12, y, { size: 12, color: '#ffb36b', outline: '#0b0d1a', outlineW: 4 });
+      }
+    }
     const boss = isBossFloor(s.floor) && s.phase === 'fight';
     if (boss) return;
     const alive = s.enemies.filter((e) => e.alive).length;
