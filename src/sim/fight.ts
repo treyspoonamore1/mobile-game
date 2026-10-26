@@ -1,7 +1,7 @@
 import { enemyDef, type Targeting } from './data/enemies.ts';
 import { isBossFloor } from './data/regions.ts';
 import { aliveHeroes, damageEnemy, damageHero, lifeFrac } from './combat.ts';
-import { checkpointOf, floorAtk, floorEnemies, floorGold, floorHp } from './floors.ts';
+import { checkpointOf, floorAtk, floorGold, floorHp, floorPack } from './floors.ts';
 import type { Loadout } from './loadout.ts';
 import { chance, makeRng, next, pick } from './rng.ts';
 import { applyAction, stepAcolytes } from './spells.ts';
@@ -54,16 +54,14 @@ export function applyLoadout(s: FightState, loadout: Loadout): void {
 }
 
 function spawnFloor(s: FightState): void {
-  const ids = floorEnemies(s.floor, s.seed);
   const H = floorHp(s.floor);
   const A = floorAtk(s.floor);
   const G = floorGold(s.floor) * s.loadout.goldMult;
-  s.enemies = ids.map((id): EnemyState => {
-    const def = enemyDef(id);
-    const boss = def.boss ? T.bossFloorMult : 1;
+  s.enemies = floorPack(s.floor, s.seed).map((m): EnemyState => {
+    const def = enemyDef(m.id);
     return {
-      uid: s.nextUid++, def, maxHp: H * def.hp * boss, hp: H * def.hp * boss, atk: A * def.atk * boss,
-      gold: G * def.gold, cds: def.attacks.map((a) => a.interval * (0.35 + 0.65 * next(s.rng))),
+      uid: s.nextUid++, def, maxHp: H * m.hp, hp: H * m.hp, atk: A * m.atk,
+      gold: Math.max(1, Math.round(G * m.gold)), cds: def.attacks.map((a) => a.interval * (0.35 + 0.65 * next(s.rng))),
       windup: null, alive: true, diedAt: -99, hitAt: -99, attackAt: -99,
     };
   });

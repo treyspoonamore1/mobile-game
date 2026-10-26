@@ -44,4 +44,45 @@ export function floorEnemies(floor: number, seed: number): EnemyId[] {
   return out;
 }
 
+/** One enemy's stat multipliers on the floor's base life, attack and gold. */
+export interface PackMember {
+  id: EnemyId;
+  hp: number;
+  atk: number;
+  gold: number;
+}
+
+/**
+ * The enemies on a floor with their stat shares. After the first region every normal floor has the same
+ * total budget (in units of a basic enemy), split by each enemy's own multipliers, so a floor's threat grows
+ * smoothly with depth whether it holds two brutes or four rats. Bosses keep their own (large) multipliers.
+ */
+export function floorPack(floor: number, seed: number): PackMember[] {
+  const ids = floorEnemies(floor, seed);
+  const defs = ids.map(enemyDef);
+  const tutorial = floor <= FLOORS_PER_REGION && depthOf(floor) === 0;
+  const sum = (k: 'hp' | 'atk' | 'gold') => defs.reduce((a, d) => a + (d.boss ? 0 : d[k]), 0);
+  const boss = isBossFloor(floor);
+  // A mild ramp inside each region: a breather after a boss, a little harder towards the next one.
+  const local = ((floor - 1) % FLOORS_PER_REGION) + 1;
+  const ramp = boss ? 1 : T.packRampStart + T.packRampPerFloor * (local - 1);
+  const share = (k: 'hp' | 'atk' | 'gold', units: number) => {
+    const total = sum(k);
+    if (tutorial || total <= 0) return 1;
+    return Math.pow((units * ramp) / total, T.packNormalize);
+  };
+  const sh = share('hp', boss ? T.bossAddUnits : T.packHpUnits);
+  const sa = share('atk', boss ? T.bossAddUnits : T.packAtkUnits);
+  const sg = share('gold', boss ? T.bossAddUnits : T.packGoldUnits);
+  return defs.map((d) => {
+    const b = d.boss ? T.bossFloorMult : 1;
+    return {
+      id: d.id,
+      hp: d.boss ? d.hp * T.bossHpMult * b : d.hp * sh,
+      atk: d.boss ? d.atk * b : d.atk * sa,
+      gold: d.boss ? d.gold : d.gold * sg,
+    };
+  });
+}
+
 export const TOTAL_REGIONS = REGIONS.length;

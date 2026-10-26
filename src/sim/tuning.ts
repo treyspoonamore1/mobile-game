@@ -7,7 +7,7 @@ export const T = {
   enemyHpGrowth: 1.13,
   enemyAtkBase: 9,
   enemyAtkGrowth: 1.115,
-  goldBase: 3,
+  goldBase: 6,
   goldGrowth: 1.135,
   /** Extra multiplier per Depth (each 50 floors). */
   depthHp: 1.6,
@@ -15,6 +15,21 @@ export const T = {
   depthGold: 1.5,
   /** Boss floors: life and attack multiplier on top of the boss's own. */
   bossFloorMult: 1,
+  /** Extra multiplier on boss life only (bosses are a check on damage, not just survival). */
+  bossHpMult: 0.6,
+  /**
+   * After the first region each normal floor's total life, attack and gold are a fixed budget, in units of
+   * a basic enemy, split among its enemies. 1 = fully normalized, 0 = raw per-enemy multipliers.
+   */
+  packNormalize: 1,
+  packHpUnits: 3,
+  packAtkUnits: 2.6,
+  packGoldUnits: 3,
+  /** Budget ramp inside a region: floor x1 gets packRampStart, each later floor adds packRampPerFloor. */
+  packRampStart: 0.8,
+  packRampPerFloor: 0.04,
+  /** Budget for the adds beside a boss. */
+  bossAddUnits: 1,
   checkpointEvery: 5,
 
   // Floor flow
@@ -29,7 +44,7 @@ export const T = {
   heroMilestoneEvery: 25,
   heroMilestoneMult: 2,
   heroCostBase: 6,
-  heroCostGrowth: 1.12,
+  heroCostGrowth: 1.15,
   rageAtFloor: 0.1,
 
   // Player spells
