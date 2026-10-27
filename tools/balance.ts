@@ -9,7 +9,7 @@ import type { DevotionUpgradeId } from '../src/sim/data/upgrades.ts';
 import { DT, step } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
 import { T } from '../src/sim/tuning.ts';
-import { assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
+import { manageGear, assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => {
@@ -24,6 +24,7 @@ const quiet = args.includes('--quiet');
 const activeLate = Number(arg('active', '0.3'));
 const LATE_FLOOR = 40;
 const noPilgrimage = args.includes('--no-pilgrimage');
+const noGear = args.includes('--no-gear');
 // Tuning experiments without editing files: --set heroCostGrowth=1.2,goldGrowth=1.1
 for (const kv of arg('set', '').split(',').filter(Boolean)) {
   const [k, v] = kv.split('=');
@@ -63,6 +64,9 @@ const milestones = new Map<number, number>();
 const healerAt: number[] = [0];
 let deedClaims = 0;
 const deedLog: string[] = [];
+/** Items kept from drops, by rarity (auto-salvaged ones not counted), and floors cleared. */
+const drops = [0, 0, 0, 0, 0];
+let clears = 0;
 const fmt = (n: number) => (n >= 1e6 ? n.toExponential(2) : n.toFixed(0));
 const mins = (s: number) => `${(s / 60).toFixed(1)}m`;
 
@@ -75,7 +79,8 @@ while (t < end) {
   const active = !lateGame || ((t / 60) % 10) / 10 < activeLate;
   const events = step(fight, active ? bot(fight) : [], DT);
   t += DT;
-  applyEvents(save, fight, events, DT);
+  for (const n of applyEvents(save, fight, events, DT)) if (n.type === 'itemDrop') drops[n.item.rarity]!++;
+  for (const e of events) if (e.type === 'floorClear') clears++;
   if (!firstWipe) for (const e of events) if (e.type === 'wipe') firstWipe = e.floor;
   pickRelics(save);
   while (healerAt.length < save.healerLevel) healerAt.push(t);
@@ -95,7 +100,8 @@ while (t < end) {
     deedClaims += deeds.length;
     for (const d of deeds) deedLog.push(`${d.name}${d.tier}@${mins(t)}`);
     const learned = learnTalents(save);
-    if (shop(save) > 0 || deeds.length > 0 || learned > 0) refreshLoadout(save, fight);
+    const gearChanged = !noGear && manageGear(save);
+    if (shop(save) > 0 || deeds.length > 0 || learned > 0 || gearChanged) refreshLoadout(save, fight);
     if (!noPilgrimage && wantsPilgrimage(save, t - runMaxAt, earned, prevRunMax)) {
       // The bots are written for the Cleric (hold = Ward); a player sticks with the Order they play best.
       const order = 'cleric';
@@ -133,5 +139,6 @@ console.log(`end: best F${save.bestFloor}, ${save.pilgrimages} pilgrimages, devo
 console.log(`devotion upgrades: ${dev || '-'}`);
 console.log(`healer level ${save.healerLevel}:`, [5, 10, 15, 20, 25, 30, 35, 40].filter((l) => l <= healerAt.length).map((l) => `L${l}@${mins(healerAt[l - 1]!)}`).join(' '));
 console.log(`deeds claimed ${deedClaims}:`, args.includes('--deeds') ? deedLog.join(' ') : '(--deeds to list)');
+console.log(`gear: ${clears} floor clears, items kept by rarity (Worn..Mythic) ${drops.join('/')} = ${(drops.reduce((a, b) => a + b, 0) / hours).toFixed(0)}/h; worn now ${Object.values(save.progress.equipped).flatMap((x) => Object.values(x ?? {})).map((it) => it!.rarity).sort().join('')}`);
 console.log(`talents: ${Object.entries(save.progress.talents).map(([k, v]) => `${k}${v}`).join(' ') || '-'}`);
 console.log('first reached:', [...milestones].map(([f, s]) => `F${f}@${mins(s)}`).join(' '));

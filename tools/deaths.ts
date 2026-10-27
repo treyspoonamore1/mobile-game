@@ -8,7 +8,7 @@ import { applyEvents, newFight, refreshLoadout } from '../src/meta/session.ts';
 import { skilledBot } from '../src/sim/bots.ts';
 import { DT, enrageMult, step } from '../src/sim/fight.ts';
 import { T } from '../src/sim/tuning.ts';
-import { assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
+import { manageGear, assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => {
@@ -20,6 +20,7 @@ for (const kv of arg('set', '').split(',').filter(Boolean)) {
   (T as unknown as Record<string, number>)[k!] = Number(v);
 }
 const minutes = Number(arg('minutes', '240'));
+const noGear = args.includes('--no-gear');
 const makeBot = () => (arg('bot', 'skilled') === 'novice' ? casualBot() : skilledBot());
 let bot = makeBot();
 const save = newSave(Number(arg('seed', '1')));
@@ -81,7 +82,7 @@ while (t < minutes * 60) {
   if (shopTimer >= 1) {
     shopTimer = 0;
     assignPrayers(save);
-    const changed = claimDeeds(save).length + learnTalents(save) + shop(save);
+    const changed = claimDeeds(save).length + learnTalents(save) + shop(save) + (!noGear && manageGear(save) ? 1 : 0);
     if (changed > 0) refreshLoadout(save, fight);
     if (save.progress.maxFloor > runMax) {
       runMax = save.progress.maxFloor;

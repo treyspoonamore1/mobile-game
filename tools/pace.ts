@@ -12,7 +12,7 @@ import { HERO_IDS } from '../src/sim/data/heroes.ts';
 import { DT, step } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
 import { T } from '../src/sim/tuning.ts';
-import { assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
+import { manageGear, assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => {
@@ -26,6 +26,7 @@ for (const kv of arg('set', '').split(',').filter(Boolean)) {
 const minutes = Number(arg('minutes', '90'));
 const quiet = args.includes('--quiet');
 const noPilgrimage = args.includes('--no-pilgrimage');
+const noGear = args.includes('--no-gear');
 const makeBot = () => (arg('bot', 'skilled') === 'novice' ? casualBot() : skilledBot());
 let bot = makeBot();
 
@@ -99,7 +100,8 @@ while (t < minutes * 60) {
       heroMilestone = ms;
       novelty.push({ t, what: `hero milestone (level ${ms * T.heroMilestoneEvery})` });
     }
-    if (n > 0 || deeds.length > 0 || learned > 0) refreshLoadout(save, fight);
+    const gearChanged = !noGear && manageGear(save);
+    if (n > 0 || deeds.length > 0 || learned > 0 || gearChanged) refreshLoadout(save, fight);
     if (save.progress.maxFloor > runMax) {
       runMax = save.progress.maxFloor;
       runMaxAt = t;

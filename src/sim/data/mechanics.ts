@@ -24,10 +24,10 @@ export const MECH_INFO: Record<MechKind, { name: string; hint: string; color: st
   siphon: { name: 'Siphon', hint: 'Don\'t cast while the Siphon is open!', color: '#c48cff' },
 };
 
-const judgement: MechAttack = { name: 'Judgement', mech: 'judgement', mult: 0, interval: 13, target: 'random', windup: 3.5 };
-const plague: MechAttack = { name: 'Plague', mech: 'plague', mult: 0, interval: 12, target: 'random', windup: 1.2 };
-const frostbite: MechAttack = { name: 'Frostbite', mech: 'frostbite', mult: 0, interval: 12, target: 'random', windup: 1.4 };
-const siphon: MechAttack = { name: 'Siphon', mech: 'siphon', mult: 0, interval: 15, target: 'all', windup: 2 };
+const judgement: MechAttack = { name: 'Judgement', mech: 'judgement', mult: 0, interval: 10, target: 'random', windup: 3.5 };
+const plague: MechAttack = { name: 'Plague', mech: 'plague', mult: 0, interval: 10, target: 'random', windup: 1.2 };
+const frostbite: MechAttack = { name: 'Frostbite', mech: 'frostbite', mult: 0, interval: 10, target: 'random', windup: 1.4 };
+const siphon: MechAttack = { name: 'Siphon', mech: 'siphon', mult: 0, interval: 12, target: 'all', windup: 2 };
 
 export const BOSS_MECHANICS: Partial<Record<EnemyId, MechAttack[]>> = {
   bone_knight: [judgement],
@@ -35,9 +35,9 @@ export const BOSS_MECHANICS: Partial<Record<EnemyId, MechAttack[]>> = {
   frost_wyrm: [frostbite],
   forge_tyrant: [siphon],
   hollow_king: [
-    { ...judgement, interval: 17 },
-    { ...plague, interval: 19 },
-    { ...siphon, interval: 23 },
+    { ...judgement, interval: 13 },
+    { ...plague, interval: 15 },
+    { ...siphon, interval: 18 },
   ],
 };
 

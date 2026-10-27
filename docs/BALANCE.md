@@ -46,6 +46,105 @@ node --experimental-strip-types tools/probe.ts --need [--seg 1|5] --from 1 --to 
   far (30% after 20 minutes stuck, 15% after 45 minutes), and never short of the previous run's depth
   unless stuck for an hour. Always Cleric. Devotion goes to weighted-cheapest upgrades.
 
+## Pass 4: gear and boss mechanics
+
+### Gear
+The simulated player now handles gear (`manageGear` in `tools/policy.ts`). After every drop it merges every
+set of three (`mergeAll`) and re-runs `autoEquip`. Once all 12 slots are filled it auto-salvages Worn drops,
+and Fine drops too once every slot holds Runed or better. `--no-gear` turns this off in `balance.ts`,
+`pace.ts` and `deaths.ts`.
+
+**As first built, gear dominated.** Skilled F100 fell from 15 h to 3.9 h and the party was in full Mythic by
+40 h. Two causes:
+- Item value grew linearly with floor on top of rarity multipliers up to ×5.5.
+- Bosses guaranteed Runed and the rarity shift reached ×3 per tier.
+
+**Changes:**
+- **Rarity multipliers:** 1 / 1.4 / 1.9 / 2.2 / 2.7 (were 1 / 1.6 / 2.5 / 3.8 / 5.5).
+- **Item values:** main stat base 0.08 → 0.07, item-level growth 0.03 → 0.005 per floor. Affix bases about
+  two thirds of before.
+- **Affix caps:** Guard 0.5 → 0.2, Haste 0.6 → 0.3, Precision 0.5 → 0.3.
+- **Odds:** rarity shift 0.02 → 0.006 per floor; boss drops guarantee Fine (was Runed).
+- **World recalibration:** gear is a permanent new power source, so enemy life and attack are both ×1.3
+  (208 / 254). Tutorial life ×0.46 and attack ramp start 0.046 keep floors 1-10 as before.
+
+**Drops.** About 160 floor clears an hour give ~45-50 drops an hour; 27-31 an hour are kept after
+auto-salvage. Over 40 h of skilled play the kept items were about 125 Worn, 360 Fine, 380 Runed, 170 Heroic
+and 50 Mythic, plus merges.
+
+Rarity odds and a typical main stat by rarity (Worn → Mythic):
+
+| Floor | Normal drop | Boss drop | Main stat |
+|---|---|---|---|
+| 10 | 59 / 28 / 10 / 3 / 0.6% | Fine+ (69 / 23 / 7 / 1.6%) | 8 → 23% |
+| 30 | 54 / 30 / 12 / 4 / 0.9% | 65 / 25 / 8 / 1.9% | 9 → 28% |
+| 60 | 48 / 31 / 14 / 5 / 1.4% | 61 / 27 / 10 / 2.9% | 8 → 28% |
+| 100 | 43 / 31 / 16 / 7.5 / 2.4% | 55 / 28 / 13 / 3.9% | 10 → 38% |
+
+Merging three into one rarity up and deeper item levels replace old gear steadily. At the end of a long run
+a party wears mostly Runed/Heroic with some Mythic; each Pilgrimage resets gear.
+
+**Gear's power value** (probe with and without equipped gear; idle / casual / skilled):
+
+| State | Gear | Worth |
+|---|---|---|
+| F38, 2 h | mixed Fine/Runed | ×1.33 / ×1.36 / ×1.55 |
+| F89 | near-full Heroic/Mythic | ×1.6 / ×1.7 / ×1.77 |
+
+Without gear (otherwise identical), skilled reaches F100 at 21.9 h and is at F130 at 40 h.
+
+### Boss mechanics
+Method: the skilled bot's state just after it first beats each boss, and the casual bot's own equivalent.
+Each boss fight is replayed 12 times with mechanics on and with mechanic damage switched off.
+
+**As first built, ignoring a mechanic cost almost nothing.** Results were identical with damage on and off:
+- Each mechanic fired about once per boss fight.
+- Plague is cured by any player heal and by the Acolyte Purity prayer.
+- Judgement's blow passes through the heavy cap and compresses to about 50%.
+- Frostbite is healed through by ordinary heals.
+- Siphon drains only 14-23 mana per fight.
+
+**Changes:**
+- **Intervals:** Judgement 13 → 10 s, Plague 12 → 10, Frostbite 12 → 10, Siphon 15 → 12; Hollow King
+  13 / 15 / 18.
+- **Judgement:** blow 0.7 → 1.0 of max life (about 57% after the cap).
+- **Plague:** burst 0.25 → 0.4 of max life, cure window 5 → 4 s.
+- **Frostbite:** 6% → 8% of max life per second.
+- **Siphon:** 4 s at 35% of max mana per cast (was 3 s at 30%).
+
+**Results:**
+- **Skilled** answers every mechanic. It wins 12/12 at F10-50, losing about 0-0.4 heroes per boss fight;
+  mechanic damage on vs off makes no difference.
+- **Casual** (ignores mechanics), at the skilled bot's states (a real wall, 26-48 s fights):
+  - F40 (Siphon): wins 0/12 with mechanics on vs 5/12 off.
+  - F50 (Hollow King: Judgement + Plague + Siphon): wins 2/12 vs 7/12, about +0.7 heroes lost per fight,
+    and Judgement fails 0.3 times per fight.
+- **Casual at its own over-farmed states:** bosses fall in 10-48 s; at F50 ignoring mechanics costs +0.7
+  heroes per fight. None of it is an instant wipe.
+- **Siphon** only drains when a spell is cast: a healer who stops casting keeps all their mana. Casual
+  casting into it lost 26-143 mana per fight.
+- **Plague** is cured by the Acolyte Purity prayer (assigned from the 5th Acolyte by the bot's priority).
+  Automation is a valid answer.
+
+### Pass 3 targets with gear (`deaths.ts` 240 min, `pace.ts` 120 min, two seeds)
+
+| | Skilled | Casual |
+|---|---|---|
+| One-shots, not enraged (floors > 10) | 5-6% | 1% |
+| Median killing blow (not enraged) | 32-34% | 27-31% |
+| Frontier hits, ordinary / heavy (median) | 27-31% / 46-49% | 18-22% / 51-54% |
+| Frontier wipes under enrage | 18-35% | 0% |
+| Hero deaths per minute, pushing / farming | 2.8-3.6 / 1.1-1.5 | 10 / 0.3-0.6 |
+| Normal floor, F1-10 / 11-20 / 21-30 / 31-40 / 41-50 | 7-8 / 11 / 13-16 / 20-24 / 19-22 s | 7-8 / 8-9 / 8-9 / 14 s |
+| Boss | 6-65 s | 9-15 s |
+| Purchases/min, 0-10 / 10-30 / 30-60 / 60-90 / 90-120 min | 13 / 3.5-3.8 / 6-7 / 8.5-9.6 / 12.6-13.2 | 11 / 3.0-3.3 / 2.0-2.5 / 8.1-8.6 / 4.5-5.1 |
+| Longest gap without anything new | 3.8-5.6 min | 4.1-4.8 min |
+
+**Deep skilled floors (F51+)** are still the weak spot, with or without gear. Most deaths there come
+under enrage, and non-enraged one-shots are 22-31% (small samples). Very strong late healing lets the
+skilled party push into floors where the fight is a damage race against the timer. Gear raises damage and
+life about equally, so it moves the wall but doesn't change its kind.
+
 ## Pass 3: healing decides the wall
 
 ### What was wrong
@@ -184,27 +283,28 @@ heal capacity grew. Cutting enemy life alone just moved that point deeper.
 The casual player's 30-60 min window (the climb to the first Pilgrimage at F25) is the one spot under
 2 purchases/min on one seed.
 
-## Resulting timelines (after pass 3)
+## Resulting timelines (after pass 4, gear included)
 
 40 hours each; skilled seeds 1/3, casual and idle seed 1. "F11" means the first boss has fallen.
 
 | Milestone | Skilled | Casual | Idle |
 |---|---|---|---|
-| First boss down (F11) | 4.4-7.3 min | 9.5 min | 25 min (first wipe on F4) |
-| F25 | **27-32 min** | 83 min | 158 min |
-| First Pilgrimage | **44-47 min** (from F29-30) | 91 min | 166 min |
-| F50 | **2.9 h** | 4.1 h | 8.3 h |
-| F75 | 6.0-6.7 h | 8.6 h | 13.7 h |
-| F100 | **12.7-15.2 h** | 20.9 h | 33.4 h |
-| Best at 40 h | F140-144, still climbing | F134 | F115 (**80%** of skilled) |
+| First boss down (F11) | 4.4-6.8 min | 8.6 min | 20 min (first wipe on F4) |
+| F25 | **29-30 min** | 63 min | 143 min |
+| First Pilgrimage | **50-51 min** (from F29-34) | 71 min | 152 min |
+| F50 | **2.5-2.9 h** | 4.0 h | 6.6 h |
+| F75 | 5.9-6.0 h | 7.5 h | 13.3 h |
+| F100 | **11.9-14.0 h** | 17.5 h | 24.9 h |
+| F125 | 20.1-25.2 h | 26.5 h | 33.1 h |
+| Best at 40 h | F150-151, still climbing | F145 | F131 (**87%** of skilled) |
 
 No Pilgrimage gains more than 17-21 floors over the previous best.
 
-**Healer levels** (skilled; casual about 30% slower early):
+**Healer levels** (skilled):
 
 | Level | 5 | 10 | 15 | 20 | 25 | 30 |
 |---|---|---|---|---|---|---|
-| Time | 8-9 min | 21-22 min | 42-46 min | 1.9-2.2 h | 5.8-6 h | 12.4-13 h |
+| Time | 8.6-8.8 min | 21 min | 41-44 min | 1.6-2.0 h | 5.5-5.6 h | 12.4-12.5 h |
 
 ## Pass 1: progression (October 26)
 
@@ -225,6 +325,15 @@ Summary of the earlier pass, still in place:
   ≥ 1), so progress can't run away but deeper runs pay more.
 
 ## Feel calls to playtest
+
+- **Best-in-slot gear** (near-full Heroic/Mythic late in a run) is worth ×1.6-1.8, slightly above the
+  ×1.3-1.6 aim; mid-game sets are ×1.3-1.55. Lower Heroic/Mythic `mainMult` (2.2 / 2.7) to trim it.
+- **Merging** three into one rarity up is generous enough that long runs end mostly in Runed/Heroic. If
+  Mythic should stay special, require 4 items or cap merges at Heroic (needs code).
+- **Mechanics:** Judgement 1.0 of max life (about 57% after the cap), Plague 0.4 burst in 4 s, Frostbite 8%/s,
+  Siphon 35% of max mana per cast for 4 s, intervals 10-12 s. Skilled loses nothing; ignoring them costs
+  ~0.5-1 hero per boss. The Acolyte Purity prayer cures Plague. Decide whether that is intended or
+  should only work on poison.
 
 - **Enemy swing rate.** Instant attacks now come 4× as often for a quarter of the damage (every 0.2-0.5 s
   per enemy). That is what turns one-shots into pressure, but render and audio see many more `enemyAttack`

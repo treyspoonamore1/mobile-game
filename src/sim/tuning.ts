@@ -3,12 +3,12 @@ export const T = {
   tickRate: 60,
 
   // Floor scaling
-  enemyHpBase: 160,
+  enemyHpBase: 208,
   enemyHpGrowth: 1.125,
-  enemyAtkBase: 195,
+  enemyAtkBase: 254,
   enemyAtkGrowth: 1.125,
   /** Enemy damage starts at atkRampStart of the curve on floor 1 and reaches it at floor 1 + atkRampFloors. */
-  atkRampStart: 0.06,
+  atkRampStart: 0.046,
   atkRampFloors: 40,
   goldBase: 10,
   goldGrowth: 1.12,
@@ -40,7 +40,7 @@ export const T = {
   /** Most budget units a floor in the first region can have. */
   tutorialUnits: 2.4,
   /** Life multiplier for enemies in the first region (floors 1-10). */
-  tutorialHpMult: 0.6,
+  tutorialHpMult: 0.46,
   /** Budget for the adds beside a boss. */
   bossAddUnits: 1,
   checkpointEvery: 5,
@@ -160,14 +160,14 @@ export const T = {
 
   // Gear
   /** A Worn item's main stat at item level 0; rarity multiplies it, depth grows it. */
-  gearMainBase: 0.08,
+  gearMainBase: 0.07,
   /** Main stat and scaling affixes grow by this per item level (floor). */
-  gearIlvlScale: 0.03,
+  gearIlvlScale: 0.005,
   /** Chance a normal floor clear drops an item; bosses always drop one of at least gearBossMinRarity. */
   gearDropChance: 0.3,
-  gearBossMinRarity: 2,
+  gearBossMinRarity: 1,
   /** Rarity odds shift toward rarer items by this per floor (at 1.0 each step up is twice as likely). */
-  gearRarityPerFloor: 0.02,
+  gearRarityPerFloor: 0.006,
   inventoryCap: 40,
   /** Salvaging pays gold worth this many average kills on the item's floor, times (rarity + 1). */
   salvageKills: 2,
@@ -175,15 +175,15 @@ export const T = {
   // Boss mechanics
   /** Judgement: below this share of life when the mark ends, the hero takes judgementDmg of max life. */
   judgementLine: 0.9,
-  judgementDmg: 0.7,
+  judgementDmg: 1,
   /** Plague: seconds to cure, burst damage (share of max life), then it spreads to the others. */
-  plagueTime: 5,
-  plagueDmg: 0.25,
+  plagueTime: 4,
+  plagueDmg: 0.4,
   /** Frostbite: two heroes lose frostDps of max life per second for up to frostTime s, until healed to frostThaw. */
   frostTime: 8,
-  frostDps: 0.06,
+  frostDps: 0.08,
   frostThaw: 0.95,
   /** Siphon: for siphonTime s, each spell you cast drains siphonDrain of your max mana. */
-  siphonTime: 3,
-  siphonDrain: 0.3,
+  siphonTime: 4,
+  siphonDrain: 0.35,
 } as const;

@@ -1,6 +1,7 @@
 // A plausible player's choices, shared by tools/balance.ts and tools/pace.ts: what to buy, which relic to
 // take, which Prayers to set, which talents to learn and when to claim Deeds.
 import { claimDeed, readyDeeds } from '../src/meta/deeds.ts';
+import { autoEquip, mergeAll } from '../src/meta/gear.ts';
 import { learnTalent, unspentPoints } from '../src/meta/healer.ts';
 import { canPilgrimage, devotionFor } from '../src/meta/pilgrimage.ts';
 import type { Save } from '../src/meta/save.ts';
@@ -154,4 +155,20 @@ export function wantsPilgrimage(save: Save, stuckFor: number, earned: number, pr
   if (save.progress.maxFloor < prevRunMax && min < 60) return false;
   const need = min >= 45 ? 0.15 : min >= 20 ? 0.3 : 0.6;
   return gain >= need * earned;
+}
+
+/**
+ * Gear like a tidy player: merge every set of three, wear the best items, and once every slot is filled
+ * stop keeping Worn drops (and Fine ones once every slot holds Runed or better). Returns true if worn gear
+ * changed (the fight's loadout needs a refresh).
+ */
+export function manageGear(save: Save): boolean {
+  const before = JSON.stringify(save.progress.equipped);
+  mergeAll(save);
+  autoEquip(save);
+  const worn = Object.values(save.progress.equipped).flatMap((slots) => Object.values(slots ?? {}));
+  const full = worn.length >= 12;
+  const minRarity = full ? Math.min(...worn.map((it) => it!.rarity)) : -1;
+  save.autoSalvageBelow = !full ? 0 : minRarity >= 2 ? 2 : 1;
+  return JSON.stringify(save.progress.equipped) !== before;
 }

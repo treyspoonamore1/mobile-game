@@ -26,24 +26,24 @@ export const SLOT_INFO: Record<Slot, { name: string; icon: IconName; main: Affix
 
 export const RARITIES = [
   { name: 'Worn', color: '#b8b8c8', weight: 60, mainMult: 1, affixes: 0 },
-  { name: 'Fine', color: '#7ee07e', weight: 28, mainMult: 1.6, affixes: 1 },
-  { name: 'Runed', color: '#5bb4ff', weight: 9, mainMult: 2.5, affixes: 1 },
-  { name: 'Heroic', color: '#c48cff', weight: 2.5, mainMult: 3.8, affixes: 2 },
-  { name: 'Mythic', color: '#ffaa3b', weight: 0.5, mainMult: 5.5, affixes: 3 },
+  { name: 'Fine', color: '#7ee07e', weight: 28, mainMult: 1.4, affixes: 1 },
+  { name: 'Runed', color: '#5bb4ff', weight: 9, mainMult: 1.9, affixes: 1 },
+  { name: 'Heroic', color: '#c48cff', weight: 2.5, mainMult: 2.2, affixes: 2 },
+  { name: 'Mythic', color: '#ffaa3b', weight: 0.5, mainMult: 2.7, affixes: 3 },
 ] as const;
 
 /** What a point of each affix means, for item cards. */
 export const AFFIX_INFO: Record<Affix, { name: string; text: string; /** Value of a Worn affix at item level 0. */ base: number }> = {
-  might: { name: 'Might', text: 'damage', base: 0.06 },
-  vigor: { name: 'Vigor', text: 'life', base: 0.06 },
-  haste: { name: 'Haste', text: 'attack speed', base: 0.04 },
-  precision: { name: 'Precision', text: 'crit chance', base: 0.03 },
-  guard: { name: 'Guard', text: 'less damage taken', base: 0.025 },
-  blessed: { name: 'Blessed', text: 'healing received', base: 0.05 },
+  might: { name: 'Might', text: 'damage', base: 0.04 },
+  vigor: { name: 'Vigor', text: 'life', base: 0.04 },
+  haste: { name: 'Haste', text: 'attack speed', base: 0.025 },
+  precision: { name: 'Precision', text: 'crit chance', base: 0.02 },
+  guard: { name: 'Guard', text: 'less damage taken', base: 0.015 },
+  blessed: { name: 'Blessed', text: 'healing received', base: 0.03 },
 };
 
 /** Caps on what a hero's gear can add up to, so no stat breaks the game. */
-export const AFFIX_CAP: Partial<Record<Affix, number>> = { haste: 0.6, precision: 0.5, guard: 0.5 };
+export const AFFIX_CAP: Partial<Record<Affix, number>> = { haste: 0.3, precision: 0.3, guard: 0.2 };
 
 export const SLOT_NOUN: Record<Slot, string[]> = {
   weapon: ['Blade', 'Axe', 'Wand', 'Bow'],
