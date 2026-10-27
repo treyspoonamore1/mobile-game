@@ -15,7 +15,7 @@ export interface OrderDef {
 export const ORDERS = [
   {
     id: 'cleric', name: 'Cleric', icon: 'sanctuary', hold: 'Ward',
-    text: 'Hold a hero to Ward them. A Ward in the last moment before a heavy blow is a Perfect. A third of your overhealing becomes a Ward.',
+    text: 'Hold a hero to Ward them. A Ward in the last moment before a heavy blow is a Perfect. Some of your overhealing becomes a Ward.',
   },
   {
     id: 'chrono', name: 'Chronomancer', icon: 'hourglass', hold: 'Rewind', unlock: 'order_chrono',

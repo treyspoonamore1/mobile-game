@@ -3,12 +3,12 @@ export const T = {
   tickRate: 60,
 
   // Floor scaling
-  enemyHpBase: 140,
+  enemyHpBase: 160,
   enemyHpGrowth: 1.125,
-  enemyAtkBase: 122,
+  enemyAtkBase: 195,
   enemyAtkGrowth: 1.125,
   /** Enemy damage starts at atkRampStart of the curve on floor 1 and reaches it at floor 1 + atkRampFloors. */
-  atkRampStart: 0.1,
+  atkRampStart: 0.06,
   atkRampFloors: 40,
   goldBase: 10,
   goldGrowth: 1.12,
@@ -19,7 +19,7 @@ export const T = {
   /** Boss floors: life and attack multiplier on top of the boss's own. */
   bossFloorMult: 0.75,
   /** Extra multiplier on boss life only (bosses are a check on damage, not just survival). */
-  bossHpMult: 0.6,
+  bossHpMult: 0.3,
   /**
    * After the first region each normal floor's total life, attack and gold are a fixed budget, in units of
    * a basic enemy, split among its enemies. 1 = fully normalized, 0 = raw per-enemy multipliers.
@@ -32,7 +32,7 @@ export const T = {
   /** Attacks that hit the whole party count this many times in a damage budget. */
   partyAttackWeight: 2,
   /** A boss's damage budget (before bossFloorMult), in the same units. */
-  bossThreat: 1.5,
+  bossThreat: 1.6,
   packGoldUnits: 3,
   /** Budget ramp inside a region: floor x1 gets packRampStart, each later floor adds packRampPerFloor. */
   packRampStart: 0.8,
@@ -40,23 +40,23 @@ export const T = {
   /** Most budget units a floor in the first region can have. */
   tutorialUnits: 2.4,
   /** Life multiplier for enemies in the first region (floors 1-10). */
-  tutorialHpMult: 1,
+  tutorialHpMult: 0.6,
   /** Budget for the adds beside a boss. */
   bossAddUnits: 1,
   checkpointEvery: 5,
   /** Enrage: after this many seconds on a floor (bosses: enrageAfterBoss), enemy damage doubles every enrageDoubling s. */
-  enrageAfter: 25,
-  enrageAfterBoss: 45,
-  enrageDoubling: 4,
+  enrageAfter: 40,
+  enrageAfterBoss: 60,
+  enrageDoubling: 8,
   /**
    * No surprise one-shots: a single hit takes at most this share of the target's max life (before enrage).
    * Basic hits are untelegraphed; area blows hit everyone; a heavy blow from full leaves a sliver.
    */
   basicHitCap: 0.3,
-  aoeHitCap: 0.5,
-  heavyHitCap: 0.85,
+  aoeHitCap: 0.3,
+  heavyHitCap: 0.45,
   /** Past the cap, damage grows as (raw / cap)^hitCapSoftness. */
-  hitCapSoftness: 0.35,
+  hitCapSoftness: 0.3,
   /** Poison damage per second is capped at this share of max life. */
   poisonCapPerSec: 0.06,
   /** After this many wipes in a row on one floor, the party farms below it for a while, then pushes again. */
@@ -83,11 +83,11 @@ export const T = {
   manaRegen: 7,
   mendPct: 0.22,
   /** Most a fully upgraded Mend heals (share of max life), and most a fully upgraded Ward absorbs. */
-  mendCap: 0.7,
-  wardCap: 1.2,
+  mendCap: 0.3,
+  wardCap: 0.6,
   /** Share of the Cleric's overhealing that becomes a Ward. */
-  clericOverhealShield: 0.333,
-  mendCost: 10,
+  clericOverhealShield: 0.15,
+  mendCost: 18,
   wardPct: 0.4,
   wardCost: 14,
   wardDur: 6,
@@ -116,9 +116,9 @@ export const T = {
   acolyteFloorUnlock: 10,
   acolyteSpeedPerLevel: 0.95,
   /** Caps that Litany (Acolyte power), Deep Well and Wellspring approach with diminishing returns. */
-  acolytePowerCap: 3,
-  manaMaxCap: 2.5,
-  manaRegenCap: 3,
+  acolytePowerCap: 1.2,
+  manaMaxCap: 1.8,
+  manaRegenCap: 1.4,
 
   // Devotion upgrades (per level)
   mightPerLevel: 1.17,
@@ -148,8 +148,8 @@ export const T = {
   healerXpSave: 3,
   healerXpAcolyte: 0.15,
   /** XP to go from level L to L+1: base × growth^(L-1). */
-  healerXpBase: 420,
-  healerXpGrowth: 1.157,
+  healerXpBase: 250,
+  healerXpGrowth: 1.2,
   /** Deed claims pay gold worth this many average kills on the current floor. */
   deedGoldKills: 15,
 

@@ -70,7 +70,8 @@ describe('talent effects', () => {
 
   it('Lifebloom keeps healing after a Chain Mend', () => {
     const s = fight({ lifebloom: 1 });
-    s.heroes.forEach((h) => (h.hp = 1));
+    // The tank stays healthy so the enemies keep hitting him, not the heroes being measured.
+    s.heroes.forEach((h, i) => (h.hp = i === 0 ? h.stats.maxHp : 1));
     step(s, [{ kind: 'chain', heroes: [1, 2] }]);
     const after = s.heroes[2]!.hp;
     for (let i = 0; i < 60; i++) step(s);
