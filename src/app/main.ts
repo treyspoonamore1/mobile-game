@@ -7,6 +7,9 @@ import { pilgrimage as doPilgrimage } from '../meta/pilgrimage.ts';
 import { newSave, parseSave, type Save } from '../meta/save.ts';
 import { applyEvents, newFight, pickRelic as metaPickRelic, refreshLoadout, type MetaNote } from '../meta/session.ts';
 import { buyDevotionUpgrade, buyGoldUpgrade, buyHero } from '../meta/shop.ts';
+import { claimDeed } from '../meta/deeds.ts';
+import { learnTalent, resetTalents } from '../meta/healer.ts';
+import { deedDef } from '../sim/data/deeds.ts';
 import { Renderer } from '../render/renderer.ts';
 import { isBossFloor, regionOf } from '../sim/data/regions.ts';
 import { DT, step } from '../sim/fight.ts';
@@ -92,6 +95,33 @@ const game: Game = {
   buyDevotion(id) {
     afterBuy(buyDevotionUpgrade(save, id));
   },
+  learnTalent(id) {
+    const ok = learnTalent(save, id);
+    if (ok) {
+      refreshLoadout(save, fight);
+      playSfx('levelup');
+      haptic('buy');
+    } else game.uiTap(false);
+    bump();
+  },
+  resetTalents() {
+    resetTalents(save);
+    refreshLoadout(save, fight);
+    game.uiTap();
+    bump();
+  },
+  claimDeed(id) {
+    const gold = claimDeed(save, id);
+    if (gold === null) {
+      game.uiTap(false);
+      return;
+    }
+    refreshLoadout(save, fight);
+    playSfx('relic');
+    haptic('save');
+    game.toast(`${deedDef(id).name} claimed! +${shortGold(gold)} gold`, 'gold');
+    bump();
+  },
   setPrayer(slot, prayer) {
     save.progress.acolytes[slot] = prayer;
     refreshLoadout(save, fight);
@@ -166,6 +196,10 @@ gestures.onPress = (kind) => {
   if (kind === 'tap') haptic('tap');
 };
 
+function shortGold(n: number): string {
+  return n >= 1e6 ? n.toExponential(1) : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : Math.round(n).toString();
+}
+
 function bump(): void {
   game.version.value++;
 }
@@ -227,6 +261,21 @@ function onNotes(notes: MetaNote[]): void {
         if (n.floor % 5 === 0 && n.floor > 1) game.toast(`New record: floor ${n.floor}!`, 'gold');
         break;
       case 'prayerUnlocked':
+        break;
+      case 'healerLevel':
+        renderer.fx.banner(`HEALER LEVEL ${n.level}`, '+1 talent point', '#7ee07e', 1.6);
+        playSfx('levelup');
+        haptic('save');
+        if (!save.tutorial.talents) {
+          save.tutorial.talents = true;
+          game.modal.value = game.modal.value ?? { kind: 'unlock', id: 'talents' };
+        }
+        break;
+      case 'deedReady':
+        if (!save.tutorial.deeds) {
+          save.tutorial.deeds = true;
+          game.modal.value = game.modal.value ?? { kind: 'unlock', id: 'deeds' };
+        } else game.toast('Deed complete! Claim it in Deeds.', 'gold');
         break;
     }
   }

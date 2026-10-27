@@ -9,6 +9,8 @@ export function freshProgress(over: Partial<Progress> = {}): Progress {
     order: 'cleric',
     acolytes: [],
     maxFloor: 1,
+    talents: {},
+    deeds: {},
     ...over,
   };
 }

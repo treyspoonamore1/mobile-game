@@ -5,6 +5,8 @@ import { hash2, makeRng, next } from '../sim/rng.ts';
 import type { FightState, SimEvent } from '../sim/state.ts';
 import { T } from '../sim/tuning.ts';
 import type { Save } from './save.ts';
+import { readyDeeds } from './deeds.ts';
+import { gainXp } from './healer.ts';
 
 /** Notifications for the UI that come from applying sim events to the save. */
 export type MetaNote =
@@ -12,7 +14,9 @@ export type MetaNote =
   | { type: 'newBest'; floor: number }
   | { type: 'acolytesUnlocked' }
   | { type: 'pilgrimageReady' }
-  | { type: 'prayerUnlocked'; floor: number };
+  | { type: 'prayerUnlocked'; floor: number }
+  | { type: 'healerLevel'; level: number }
+  | { type: 'deedReady' };
 
 export function newFight(save: Save): FightState {
   const seed = hash2(save.seed, save.pilgrimages * 7919 + save.lifetime.wipes);
@@ -47,6 +51,9 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
   const notes: MetaNote[] = [];
   save.run.seconds += dt;
   save.lifetime.seconds += dt;
+  const readyBefore = events.length > 0 ? readyDeeds(save).length : 0;
+  let xp = 0;
+  let chainHeals = 0;
   for (const e of events) {
     switch (e.type) {
       case 'gold':
@@ -54,15 +61,32 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
         save.run.gold += e.amount;
         save.lifetime.gold += e.amount;
         break;
-      case 'heal':
+      case 'heal': {
         save.run.healed += e.amount;
         save.lifetime.healed += e.amount;
+        const max = fight.heroes[e.hero]?.stats.maxHp ?? 1;
+        xp += (e.amount / max) * T.healerXpPerLife * (e.by === 'acolyte' ? T.healerXpAcolyte : 1);
+        if (e.kind === 'chain') chainHeals++;
         break;
+      }
       case 'perfect':
         save.run.perfects++;
         save.lifetime.perfects++;
+        save.lifetime.bestStreak = Math.max(save.lifetime.bestStreak, e.streak);
+        xp += T.healerXpPerfect;
+        break;
+      case 'revive':
+        if (e.by !== 'phoenix') {
+          save.run.revives++;
+          save.lifetime.revives++;
+        }
+        break;
+      case 'sanctuary':
+        save.run.sanctuaries++;
+        save.lifetime.sanctuaries++;
         break;
       case 'save':
+        xp += T.healerXpSave;
         save.run.saves++;
         save.lifetime.saves++;
         break;
@@ -92,6 +116,14 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
       case 'floorClear':
         save.run.floors++;
         save.lifetime.floors++;
+        if (e.boss) {
+          save.run.bosses++;
+          save.lifetime.bosses++;
+          if (e.flawless) {
+            save.run.flawlessBosses++;
+            save.lifetime.flawlessBosses++;
+          }
+        }
         if (e.boss && !save.bossesCleared.includes(e.floor)) {
           save.bossesCleared.push(e.floor);
           const offer = relicOffer(save, e.floor);
@@ -105,6 +137,15 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
         break;
     }
   }
+  if (chainHeals >= 4) {
+    save.run.fullChains++;
+    save.lifetime.fullChains++;
+  }
+  if (xp > 0) {
+    const levels = gainXp(save, xp);
+    if (levels > 0) notes.push({ type: 'healerLevel', level: save.healerLevel });
+  }
+  if (events.length > 0 && readyDeeds(save).length > readyBefore) notes.push({ type: 'deedReady' });
   save.floor = fight.phase === 'wipe' ? save.floor : fight.floor;
   return notes;
 }

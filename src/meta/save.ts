@@ -10,6 +10,12 @@ export interface Tally {
   floors: number;
   wipes: number;
   seconds: number;
+  bosses: number;
+  flawlessBosses: number;
+  bestStreak: number;
+  fullChains: number;
+  revives: number;
+  sanctuaries: number;
 }
 
 export interface Settings {
@@ -31,6 +37,9 @@ export interface Save {
   /** Deepest floor ever, across Pilgrimages. */
   bestFloor: number;
   bossesCleared: number[];
+  /** The healer's own level, from healing done. Permanent. */
+  healerLevel: number;
+  healerXp: number;
   relicOffers: RelicId[][];
   run: Tally;
   lifetime: Tally;
@@ -41,7 +50,10 @@ export interface Save {
 }
 
 export function emptyTally(): Tally {
-  return { healed: 0, perfects: 0, saves: 0, kills: 0, gold: 0, floors: 0, wipes: 0, seconds: 0 };
+  return {
+    healed: 0, perfects: 0, saves: 0, kills: 0, gold: 0, floors: 0, wipes: 0, seconds: 0,
+    bosses: 0, flawlessBosses: 0, bestStreak: 0, fullChains: 0, revives: 0, sanctuaries: 0,
+  };
 }
 
 export function newSave(seed: number): Save {
@@ -61,9 +73,13 @@ export function newSave(seed: number): Save {
       order: 'cleric',
       acolytes: ['mend_lowest', 'ward_tank', 'mend_lowest', 'mend_lowest', 'mend_lowest', 'mend_lowest', 'mend_lowest'],
       maxFloor: 1,
+      talents: {},
+      deeds: {},
     },
     bestFloor: 1,
     bossesCleared: [],
+    healerLevel: 1,
+    healerXp: 0,
     relicOffers: [],
     run: emptyTally(),
     lifetime: emptyTally(),

@@ -25,6 +25,9 @@ export interface HeroState {
   /** Sim time of the last telegraphed hit taken, and its damage. */
   bigHitAt: number;
   bigHitDmg: number;
+  /** Lifebloom: healing per second and seconds left. */
+  bloomRate: number;
+  bloomT: number;
   /** Render cues: sim times of the last events. */
   hitAt: number;
   healAt: number;
@@ -49,6 +52,8 @@ export interface EnemyState {
   windup: Windup | null;
   alive: boolean;
   diedAt: number;
+  /** Riposte: seconds left stunned (no attacks, no windups). */
+  stunT: number;
   hitAt: number;
   attackAt: number;
 }
@@ -99,9 +104,11 @@ export interface FightState {
   stats: FightStats;
   events: SimEvent[];
   histTimer: number;
+  /** Heroes that fell on this floor (for flawless clears). */
+  downsThisFloor: number;
 }
 
-export type SpellKind = 'mend' | 'ward' | 'chain' | 'revive' | 'rewind' | 'anthem' | 'cleanse';
+export type SpellKind = 'mend' | 'ward' | 'chain' | 'revive' | 'rewind' | 'anthem' | 'cleanse' | 'splash' | 'bloom';
 
 export type SimEvent =
   | { type: 'heal'; hero: number; amount: number; over: number; by: 'player' | 'acolyte'; kind: SpellKind; beat?: boolean }
@@ -123,9 +130,10 @@ export type SimEvent =
   | { type: 'encore' }
   | { type: 'anthem' }
   | { type: 'cleanse'; hero: number }
+  | { type: 'stun'; enemy: number; secs: number }
   | { type: 'acolyteCast'; acolyte: number; hero: number; kind: SpellKind }
   | { type: 'floorStart'; floor: number; boss: boolean }
-  | { type: 'floorClear'; floor: number; boss: boolean }
+  | { type: 'floorClear'; floor: number; boss: boolean; flawless: boolean }
   | { type: 'wipe'; floor: number; checkpoint: number };
 
 export type Action =

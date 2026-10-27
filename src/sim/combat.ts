@@ -40,6 +40,8 @@ export function damageHero(s: FightState, i: number, raw: number, src: HitSource
     perfect(s, i, dmg, src.enemy);
     return false;
   }
+  // A heavy blow that lands breaks the Perfect streak (the Chronomancer's Perfect comes after the hit).
+  if (src.big && s.loadout.order !== 'chrono') s.perfectStreak = 0;
 
   const absorbed = Math.min(h.shield, dmg);
   h.shield -= absorbed;
@@ -96,6 +98,19 @@ function perfect(s: FightState, i: number, blocked: number, enemy: number): void
   if (s.loadout.relics.has('bell_of_dawn')) {
     for (const j of aliveHeroes(s)) healHero(s, j, s.heroes[j]!.stats.maxHp * 0.15, 'player', 'mend');
   }
+  // Riposte: the attacker reels.
+  const attacker = s.enemies[enemy];
+  if (s.loadout.riposte > 0 && attacker?.alive) {
+    attacker.stunT = Math.max(attacker.stunT, s.loadout.riposte);
+    attacker.windup = null;
+    s.events.push({ type: 'stun', enemy, secs: s.loadout.riposte });
+  }
+  // Bastion: the Perfect spreads a Ward over the whole party.
+  if (s.loadout.bastion > 0) {
+    for (const j of aliveHeroes(s)) {
+      if (j !== i) shieldHero(s, j, s.heroes[j]!.stats.maxHp * s.loadout.bastion, 'acolyte');
+    }
+  }
 }
 
 export function downHero(s: FightState, i: number): void {
@@ -105,6 +120,8 @@ export function downHero(s: FightState, i: number): void {
   h.shield = 0;
   h.poisonT = 0;
   h.recentHealT = 0;
+  h.bloomT = 0;
+  s.downsThisFloor++;
   s.events.push({ type: 'heroDown', hero: i });
 }
 
@@ -126,7 +143,17 @@ export function healHero(
   if (over > 0 && s.loadout.overhealShield > 0) {
     const cap = h.stats.maxHp * s.loadout.wardPct;
     h.shield = Math.min(Math.max(h.shield, cap), h.shield + over * s.loadout.overhealShield);
-    h.shieldT = Math.max(h.shieldT, T.wardDur);
+    h.shieldT = Math.max(h.shieldT, s.loadout.wardDur);
+  }
+  // Overflow: part of your overhealing splashes onto the most hurt other hero.
+  if (over > 0 && by === 'player' && kind !== 'splash' && s.loadout.overflow > 0) {
+    let target = -1;
+    for (const j of aliveHeroes(s)) {
+      if (j !== i && (target < 0 || lifeFrac(s.heroes[j]!) < lifeFrac(s.heroes[target]!))) target = j;
+    }
+    if (target >= 0 && lifeFrac(s.heroes[target]!) < 1) {
+      healHero(s, target, (over * s.loadout.overflow) / s.loadout.healMult, 'player', 'splash');
+    }
   }
 }
 
@@ -134,7 +161,7 @@ export function shieldHero(s: FightState, i: number, amount: number, by: 'player
   const h = s.heroes[i]!;
   if (!h.alive) return;
   h.shield = Math.max(h.shield, amount * s.loadout.healMult);
-  h.shieldT = T.wardDur;
+  h.shieldT = s.loadout.wardDur;
   if (by === 'player') h.playerWardAt = s.t;
   s.events.push({ type: 'shield', hero: i, amount, by });
 }

@@ -46,8 +46,15 @@ export function applyAction(s: FightState, a: Action): void {
         }
       }
       if (!spend(s, cost)) return;
-      if (lifeFrac(h) < 0.3) addResonance(s, T.resonanceLowMend);
+      if (lifeFrac(h) < 0.3) {
+        addResonance(s, T.resonanceLowMend);
+        pct *= 1 + L.triage;
+      }
       healHero(s, a.hero, h.stats.maxHp * pct, 'player', 'mend', beat);
+      if (L.secondTouch > 0 && chance(s.rng, L.secondTouch)) {
+        const next = mostHurt(s, a.hero);
+        if (next !== null) healHero(s, next, s.heroes[next]!.stats.maxHp * pct * 0.5, 'player', 'mend', beat);
+      }
       if (L.relics.has('tome_of_echoes') && chance(s.rng, 0.25)) {
         healHero(s, a.hero, h.stats.maxHp * pct, 'player', 'mend', beat);
       }
@@ -72,7 +79,12 @@ export function applyAction(s: FightState, a: Action): void {
       if (targets.length === 0) return;
       if (!spend(s, L.mendCost * T.chainCostMult)) return;
       for (const i of targets) {
-        healHero(s, i, s.heroes[i]!.stats.maxHp * L.mendPct * L.chainEff, 'player', 'chain');
+        const amount = s.heroes[i]!.stats.maxHp * L.mendPct * L.chainEff;
+        healHero(s, i, amount, 'player', 'chain');
+        if (L.lifebloom) {
+          s.heroes[i]!.bloomRate = (amount * 0.3) / 3;
+          s.heroes[i]!.bloomT = 3;
+        }
       }
       return;
     }
@@ -81,10 +93,23 @@ export function applyAction(s: FightState, a: Action): void {
       s.resonance = 0;
       s.sanctuaryT = T.sanctuaryDur;
       s.events.push({ type: 'sanctuary' });
+      if (L.miracle > 0) {
+        s.heroes.forEach((h, i) => !h.alive && reviveHero(s, i, L.miracle, 'player'));
+      }
       for (const i of aliveHeroes(s)) healHero(s, i, s.heroes[i]!.stats.maxHp * T.sanctuaryHeal, 'player', 'mend');
       return;
     }
   }
+}
+
+/** The most hurt living hero other than `except`, if any is hurt. */
+function mostHurt(s: FightState, except: number): number | null {
+  let best: number | null = null;
+  for (const i of aliveHeroes(s)) {
+    if (i === except || lifeFrac(s.heroes[i]!) >= 1) continue;
+    if (best === null || lifeFrac(s.heroes[i]!) < lifeFrac(s.heroes[best]!)) best = i;
+  }
+  return best;
 }
 
 function bardBeat(s: FightState, beat: boolean): void {

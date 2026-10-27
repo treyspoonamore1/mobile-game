@@ -58,8 +58,8 @@ describe('relics', () => {
   it('a boss clear queues a relic offer once', () => {
     const s = newSave(1);
     const f = newFight(s);
-    applyEvents(s, f, [{ type: 'floorClear', floor: 10, boss: true }], 0);
-    applyEvents(s, f, [{ type: 'floorClear', floor: 10, boss: true }], 0);
+    applyEvents(s, f, [{ type: 'floorClear', floor: 10, boss: true, flawless: false }], 0);
+    applyEvents(s, f, [{ type: 'floorClear', floor: 10, boss: true, flawless: false }], 0);
     expect(s.relicOffers.length).toBe(1);
   });
 });

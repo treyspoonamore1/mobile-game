@@ -6,12 +6,14 @@ import type { OrderId } from '../sim/data/orders.ts';
 import type { PrayerId } from '../sim/data/prayers.ts';
 import type { RelicId } from '../sim/data/relics.ts';
 import type { DevotionUpgradeId, GoldUpgradeId } from '../sim/data/upgrades.ts';
+import type { DeedId } from '../sim/data/deeds.ts';
+import type { TalentId } from '../sim/data/talents.ts';
 import type { FightState } from '../sim/state.ts';
 
-export type SheetId = 'party' | 'spells' | 'acolytes' | 'relics' | 'pilgrim';
+export type SheetId = 'party' | 'healer' | 'acolytes' | 'deeds' | 'pilgrim';
 
 /** Explanations shown once when a system unlocks. */
-export type UnlockId = 'acolytes' | 'pilgrimage' | 'relics';
+export type UnlockId = 'acolytes' | 'pilgrimage' | 'relics' | 'talents' | 'deeds';
 
 export type Modal =
   | { kind: 'relic' }
@@ -62,6 +64,10 @@ export interface Game {
   buyDevotion(id: DevotionUpgradeId): void;
   setPrayer(slot: number, prayer: PrayerId): void;
   pickRelic(id: RelicId): void;
+  learnTalent(id: TalentId): void;
+  resetTalents(): void;
+  /** Claim a Deed's next tier: its permanent bonus plus a gold payout. */
+  claimDeed(id: DeedId): void;
   pilgrimage(order: OrderId): void;
   setAutoAdvance(on: boolean): void;
   setSettings(s: Partial<Settings>): void;

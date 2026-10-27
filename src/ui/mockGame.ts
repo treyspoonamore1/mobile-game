@@ -33,7 +33,7 @@ export function saveFromParams(q: URLSearchParams): Save {
   for (let i = 0; i < offers; i++) s.relicOffers.push(RELICS.slice(6 + i * 3, 9 + i * 3 + (q.has('insight') ? 1 : 0)).map((r) => r.id));
   if (q.has('order')) s.progress.order = q.get('order') as OrderId;
   s.progress.acolytes[1] = 'ward_tank';
-  s.lifetime = { healed: 1.234e6, perfects: 342, saves: 120, kills: 8765, gold: 3.2e7, floors: 412, wipes: 23, seconds: 51234 };
+  s.lifetime = { ...s.lifetime, healed: 1.234e6, perfects: 342, saves: 120, kills: 8765, gold: 3.2e7, floors: 412, wipes: 23, seconds: 51234 };
   return s;
 }
 

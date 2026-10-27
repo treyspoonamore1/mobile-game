@@ -120,6 +120,17 @@ export const T = {
   offlineDt: 0.05,
 
   // Pilgrimage
+  // Healer XP: XP for healing 100% of a hero's life, per Perfect and Save; Acolyte healing counts partly.
+  healerXpPerLife: 10,
+  healerXpPerfect: 5,
+  healerXpSave: 3,
+  healerXpAcolyte: 0.4,
+  /** XP to go from level L to L+1: base × growth^(L-1). */
+  healerXpBase: 60,
+  healerXpGrowth: 1.2,
+  /** Deed claims pay gold worth this many average kills on the current floor. */
+  deedGoldKills: 15,
+
   pilgrimageFloor: 25,
   /** Devotion from a Pilgrimage at pilgrimageFloor, and its growth per floor deeper. */
   devotionBase: 8,
