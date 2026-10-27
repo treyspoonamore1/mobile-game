@@ -1,6 +1,6 @@
 import { DEEDS, type DeedDef, type DeedId, type DeedStat } from '../sim/data/deeds.ts';
 import { floorGold } from '../sim/floors.ts';
-import { acolyteSlots } from '../sim/loadout.ts';
+import { acolyteSlots, buildLoadout } from '../sim/loadout.ts';
 import { T } from '../sim/tuning.ts';
 import type { Save } from './save.ts';
 
@@ -48,9 +48,9 @@ export function readyDeeds(save: Save): DeedId[] {
   return DEEDS.map((d) => d.id).filter((id) => deedProgress(save, id).ready);
 }
 
-/** Gold paid out when claiming a Deed: a handful of kills' worth at the current floor. */
+/** Gold paid out when claiming a Deed: a handful of kills' worth at the current floor, with your gold bonuses. */
 export function deedGold(save: Save): number {
-  return Math.round(floorGold(save.floor) * T.deedGoldKills);
+  return Math.round(floorGold(save.floor) * buildLoadout(save.progress).goldMult * T.deedGoldKills);
 }
 
 /** Claim the next tier of a Deed. Returns the gold paid, or null if it isn't ready. */

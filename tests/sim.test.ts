@@ -62,8 +62,8 @@ describe('balance levers', () => {
   it('enemies enrage when a floor drags on', () => {
     const s = fight({}, 3);
     expect(enrageMult(s)).toBe(1);
-    s.phaseT = T.enrageAfter + 10;
-    expect(enrageMult(s)).toBeCloseTo(1 + 10 * T.enrageRamp, 6);
+    s.phaseT = T.enrageAfter + 2 * T.enrageDoubling;
+    expect(enrageMult(s)).toBeCloseTo(4, 6);
   });
 
   it('Devotion starts at the Pilgrimage floor and grows with depth', () => {

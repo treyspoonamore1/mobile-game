@@ -246,7 +246,8 @@ function hit(
 export function enrageMult(s: FightState): number {
   if (s.phase !== 'fight') return 1;
   const after = isBossFloor(s.floor) ? T.enrageAfterBoss : T.enrageAfter;
-  return 1 + T.enrageRamp * Math.max(0, s.phaseT - after);
+  // Doubles every enrageDoubling seconds: past the limit a floor ends quickly, one way or the other.
+  return Math.pow(2, Math.max(0, s.phaseT - after) / T.enrageDoubling);
 }
 
 function checkFloorEnd(s: FightState): void {

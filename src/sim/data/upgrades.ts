@@ -33,7 +33,7 @@ export const GOLD_UPGRADES = [
 ] as const satisfies readonly UpgradeDef<GoldUpgradeId>[];
 
 export const DEVOTION_UPGRADES = [
-  { id: 'might', name: 'Might', icon: 'sword', text: 'Heroes +20% life and damage', baseCost: 1, growth: 1.55 },
+  { id: 'might', name: 'Might', icon: 'sword', text: 'Heroes +17% life and damage', baseCost: 1, growth: 1.55 },
   { id: 'fortune', name: 'Fortune', icon: 'gold', text: '+30% gold', baseCost: 1, growth: 1.6 },
   { id: 'grace', name: 'Grace', icon: 'heart', text: 'All healing and Wards +10%', baseCost: 2, growth: 1.6, max: 25 },
   { id: 'spirit', name: 'Spirit', icon: 'mana', text: '+20% mana regeneration', baseCost: 2, growth: 1.6, max: 20 },

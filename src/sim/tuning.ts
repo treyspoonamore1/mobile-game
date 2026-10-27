@@ -5,8 +5,11 @@ export const T = {
   // Floor scaling
   enemyHpBase: 140,
   enemyHpGrowth: 1.125,
-  enemyAtkBase: 10,
+  enemyAtkBase: 122,
   enemyAtkGrowth: 1.125,
+  /** Enemy damage starts at atkRampStart of the curve on floor 1 and reaches it at floor 1 + atkRampFloors. */
+  atkRampStart: 0.1,
+  atkRampFloors: 40,
   goldBase: 10,
   goldGrowth: 1.12,
   /** Extra multiplier per Depth (each 50 floors). */
@@ -22,7 +25,7 @@ export const T = {
    * a basic enemy, split among its enemies. 1 = fully normalized, 0 = raw per-enemy multipliers.
    */
   packNormalize: 1,
-  packHpUnits: 3,
+  packHpUnits: 2,
   /** Attack budget, in units of basicAttackRate (a Skeleton: 1/1.5 s basic + 4x every 7 s). */
   packAtkUnits: 2.6,
   basicAttackRate: 1.24,
@@ -37,14 +40,14 @@ export const T = {
   /** Most budget units a floor in the first region can have. */
   tutorialUnits: 2.4,
   /** Life multiplier for enemies in the first region (floors 1-10). */
-  tutorialHpMult: 1.45,
+  tutorialHpMult: 1,
   /** Budget for the adds beside a boss. */
   bossAddUnits: 1,
   checkpointEvery: 5,
-  /** Enrage: after this many seconds on a floor (bosses: enrageAfterBoss), enemy damage grows by enrageRamp/s. */
-  enrageAfter: 45,
-  enrageAfterBoss: 90,
-  enrageRamp: 0.05,
+  /** Enrage: after this many seconds on a floor (bosses: enrageAfterBoss), enemy damage doubles every enrageDoubling s. */
+  enrageAfter: 25,
+  enrageAfterBoss: 45,
+  enrageDoubling: 4,
 
   // Floor flow
   walkTime: 1.4,
@@ -53,9 +56,9 @@ export const T = {
   reviveOnFloorPct: 0.25,
 
   // Heroes
-  /** Life and damage multiply by this each level, and double every milestone. */
-  heroLevelGrowth: 1.06,
-  heroMilestoneEvery: 25,
+  /** Life and damage multiply by this each level, and by heroMilestoneMult every heroMilestoneEvery levels. */
+  heroLevelGrowth: 1.017,
+  heroMilestoneEvery: 10,
   heroMilestoneMult: 2,
   heroCostBase: 6,
   heroCostGrowth: 1.18,
@@ -99,7 +102,7 @@ export const T = {
   manaRegenCap: 3,
 
   // Devotion upgrades (per level)
-  mightPerLevel: 1.2,
+  mightPerLevel: 1.17,
   fortunePerLevel: 1.3,
   gracePerLevel: 0.1,
   spiritPerLevel: 0.2,
@@ -124,15 +127,15 @@ export const T = {
   healerXpPerLife: 10,
   healerXpPerfect: 5,
   healerXpSave: 3,
-  healerXpAcolyte: 0.4,
+  healerXpAcolyte: 0.15,
   /** XP to go from level L to L+1: base × growth^(L-1). */
-  healerXpBase: 60,
-  healerXpGrowth: 1.2,
+  healerXpBase: 420,
+  healerXpGrowth: 1.157,
   /** Deed claims pay gold worth this many average kills on the current floor. */
   deedGoldKills: 15,
 
   pilgrimageFloor: 25,
   /** Devotion from a Pilgrimage at pilgrimageFloor, and its growth per floor deeper. */
-  devotionBase: 8,
-  devotionGrowth: 1.045,
+  devotionBase: 6,
+  devotionGrowth: 1.04,
 } as const;

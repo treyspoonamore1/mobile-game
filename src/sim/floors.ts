@@ -7,8 +7,17 @@ export function floorHp(floor: number): number {
   return T.enemyHpBase * Math.pow(T.enemyHpGrowth, floor - 1) * Math.pow(T.depthHp, depthOf(floor));
 }
 
+/**
+ * Enemy damage ramps up over the first atkRampFloors floors on top of its growth: the healer starts with
+ * one Mend and little mana, and gains Acolytes, upgrades and talents as they go. Damage pressure grows with
+ * that healing power, so walls stay damage-gated (short fights) instead of becoming slow HP races.
+ */
+export function atkRamp(floor: number): number {
+  return T.atkRampStart + (1 - T.atkRampStart) * Math.min(1, (floor - 1) / T.atkRampFloors);
+}
+
 export function floorAtk(floor: number): number {
-  return T.enemyAtkBase * Math.pow(T.enemyAtkGrowth, floor - 1) * Math.pow(T.depthAtk, depthOf(floor));
+  return T.enemyAtkBase * atkRamp(floor) * Math.pow(T.enemyAtkGrowth, floor - 1) * Math.pow(T.depthAtk, depthOf(floor));
 }
 
 export function floorGold(floor: number): number {
