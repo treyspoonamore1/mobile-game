@@ -1,5 +1,6 @@
 import type { Game } from '../app/game.ts';
 import { Icon } from './Icon.tsx';
+import { openHealer } from './nav.ts';
 import { hasBadge, lockReason, TABS, type TabId } from './status.ts';
 import { useSave } from './widgets.tsx';
 
@@ -16,6 +17,7 @@ export function NavBar({ game }: { game: Game }) {
     }
     game.uiTap(true);
     if (id === 'fight' || id === open) game.openSheet(null);
+    else if (id === 'healer') openHealer(game);
     else game.openSheet(id);
   };
   return (
@@ -33,7 +35,7 @@ export function NavBar({ game }: { game: Game }) {
           <button type="button" class={cls} aria-label={lock ? `${t.label} (locked)` : t.label} onClick={() => press(t.id)}>
             <span class="nav-icon">
               <Icon id={lock ? 'lock' : t.icon} scale={2} />
-              {!lock && hasBadge(save, t.id) && <span class="nav-badge" />}
+              {!lock && hasBadge(save, t.id) && <span class={`nav-badge ${t.id === 'deeds' ? 'is-pulse' : ''}`} />}
             </span>
             <span class="nav-label">{t.label}</span>
           </button>

@@ -27,11 +27,18 @@ function Main({ game, setPane }: { game: Game; setPane: (p: Pane) => void }) {
   const stats: [string, string][] = [
     ['Best floor', String(save.bestFloor)],
     ['Pilgrimages', String(save.pilgrimages)],
+    ['Healer level', String(save.healerLevel)],
     ['Healed', fmt(L.healed)],
     ['Perfects', fmt(L.perfects)],
     ['Saves', fmt(L.saves)],
     ['Kills', fmt(L.kills)],
     ['Floors', fmt(L.floors)],
+    ['Bosses', fmt(L.bosses)],
+    ['Flawless', fmt(L.flawlessBosses)],
+    ['Best streak', fmt(L.bestStreak)],
+    ['Full chains', fmt(L.fullChains)],
+    ['Revives', fmt(L.revives)],
+    ['Sanctuaries', fmt(L.sanctuaries)],
     ['Wipes', fmt(L.wipes)],
     ['Play time', duration(L.seconds)],
   ];

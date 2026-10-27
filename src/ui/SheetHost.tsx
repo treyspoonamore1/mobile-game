@@ -2,9 +2,9 @@ import { useEffect, useState } from 'preact/hooks';
 import type { Game, SheetId } from '../app/game.ts';
 import { AcolytesSheet } from './sheets/AcolytesSheet.tsx';
 import { PartySheet } from './sheets/PartySheet.tsx';
+import { DeedsSheet } from './sheets/DeedsSheet.tsx';
+import { HealerSheet } from './sheets/HealerSheet.tsx';
 import { PilgrimSheet } from './sheets/PilgrimSheet.tsx';
-import { RelicsSheet } from './sheets/RelicsSheet.tsx';
-import { SpellsSheet } from './sheets/SpellsSheet.tsx';
 import { Icon } from './Icon.tsx';
 import { SHEET_TITLES, TABS } from './status.ts';
 
@@ -62,12 +62,12 @@ function SheetBody({ game, id }: { game: Game; id: SheetId }) {
   switch (id) {
     case 'party':
       return <PartySheet game={game} />;
-    case 'spells':
-      return <SpellsSheet game={game} />;
+    case 'healer':
+      return <HealerSheet game={game} />;
     case 'acolytes':
       return <AcolytesSheet game={game} />;
-    case 'relics':
-      return <RelicsSheet game={game} />;
+    case 'deeds':
+      return <DeedsSheet game={game} />;
     case 'pilgrim':
       return <PilgrimSheet game={game} />;
   }

@@ -1,10 +1,21 @@
 import type { Game, SheetId, UnlockId } from '../../app/game.ts';
+import { openHealer, type HealerSeg } from '../nav.ts';
 import type { IconName } from '../../sim/data/icons.ts';
 import { HeroSprite, Icon } from '../Icon.tsx';
 import { Btn } from '../widgets.tsx';
 import { ModalFrame } from './ModalHost.tsx';
 
-const UNLOCKS: Record<UnlockId, { icon: IconName; title: string; lines: string[]; sheet: SheetId; button: string }> = {
+interface UnlockDef {
+  icon: IconName;
+  title: string;
+  lines: string[];
+  sheet: SheetId;
+  /** Healer sheet segment to open on. */
+  seg?: HealerSeg;
+  button: string;
+}
+
+const UNLOCKS: Record<UnlockId, UnlockDef> = {
   acolytes: {
     icon: 'acolyte',
     title: 'Acolytes join you!',
@@ -24,8 +35,32 @@ const UNLOCKS: Record<UnlockId, { icon: IconName; title: string; lines: string[]
       'Pick one: each bends the rules in your favour.',
       'Relics last until your next Pilgrimage.',
     ],
-    sheet: 'relics',
+    sheet: 'healer',
+    seg: 'relics',
     button: 'See relics',
+  },
+  talents: {
+    icon: 'star',
+    title: 'Level up!',
+    lines: [
+      'Healing earns XP, and every healer level gives you a talent point.',
+      'Spend points in three trees: Mercy (Mending), Aegis (Wards) and Grace (mana and the party).',
+      'Talents are yours forever, even through Pilgrimages, and you can respec for free.',
+    ],
+    sheet: 'healer',
+    seg: 'talents',
+    button: 'Open talents',
+  },
+  deeds: {
+    icon: 'crown',
+    title: 'A Deed is done!',
+    lines: [
+      'Deeds are feats like "Land 5 Perfects" or "Defeat 100 enemies".',
+      'Claim each one for gold and a permanent bonus that survives every Pilgrimage.',
+      'Every Deed has several tiers to climb.',
+    ],
+    sheet: 'deeds',
+    button: 'Claim it',
   },
   pilgrimage: {
     icon: 'pilgrim',
@@ -64,7 +99,8 @@ export function UnlockModal({ game, id }: { game: Game; id: UnlockId }) {
           class="grow"
           onPress={() => {
             game.closeModal();
-            game.openSheet(u.sheet);
+            if (u.sheet === 'healer') openHealer(game, u.seg);
+            else game.openSheet(u.sheet);
           }}
         >
           {u.button}

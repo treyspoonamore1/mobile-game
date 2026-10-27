@@ -8,7 +8,7 @@ import { dec, roman } from '../format.ts';
 import { Icon } from '../Icon.tsx';
 import { isAco } from '../status.ts';
 import { IconWell, Panel, SectionTitle, useSave } from '../widgets.tsx';
-import { GoldUpgradeCard } from './SpellsSheet.tsx';
+import { GoldUpgradeCard } from './SpellsPane.tsx';
 
 /** Which slot's prayer list is open. */
 const openSlot = signal<number | null>(null);

@@ -3,12 +3,12 @@ import { relicDef } from '../../sim/data/relics.ts';
 import { Icon } from '../Icon.tsx';
 import { Btn, IconWell, Panel, SectionTitle, useSave } from '../widgets.tsx';
 
-export function RelicsSheet({ game }: { game: Game }) {
+export function RelicsPane({ game }: { game: Game }) {
   const save = useSave(game);
   const owned = save.progress.relics;
   const waiting = save.relicOffers.length;
   return (
-    <div class="sheet-body">
+    <>
       {waiting > 0 && (
         <Btn game={game} big class="choose-relic glow" onPress={() => game.openModal({ kind: 'relic' })}>
           <Icon id="relic" scale={2} />
@@ -40,6 +40,6 @@ export function RelicsSheet({ game }: { game: Game }) {
         </div>
       )}
       <p class="footnote">Relics are lost on Pilgrimage.</p>
-    </div>
+    </>
   );
 }

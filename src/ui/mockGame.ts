@@ -1,17 +1,24 @@
 // A stand-in Game for the UI preview page (ui.html). Uses the real save, shop and pilgrimage logic.
 import { signal } from '@preact/signals';
-import type { Game, Hint, Modal, SheetId, Toast } from '../app/game.ts';
+import type { Game, Hint, Modal, SheetId, Toast, UnlockId } from '../app/game.ts';
+import { claimDeed } from '../meta/deeds.ts';
+import { learnTalent, resetTalents } from '../meta/healer.ts';
 import { pilgrimage } from '../meta/pilgrimage.ts';
 import { newSave, parseSave, type Save } from '../meta/save.ts';
 import { buyDevotionUpgrade, buyGoldUpgrade, buyHero } from '../meta/shop.ts';
+import { BONUS_LABEL, DEEDS, deedDef } from '../sim/data/deeds.ts';
 import { HERO_IDS } from '../sim/data/heroes.ts';
 import type { OrderId } from '../sim/data/orders.ts';
 import { RELICS } from '../sim/data/relics.ts';
 import { DEVOTION_UPGRADES, GOLD_UPGRADES } from '../sim/data/upgrades.ts';
 import type { FightState } from '../sim/state.ts';
+import { healerSeg } from './nav.ts';
 import { TABS } from './status.ts';
 
-/** Build a save from query params: gold, floor, max, best, devotion, pilg, lv, up, dev, relics, offers, order, auto. */
+/**
+ * Build a save from query params: gold, floor, max, best, devotion, pilg, lv, up, dev, relics, offers, order, auto,
+ * hlv (healer level), hxp, tal (1 = some talents learned, 2 = a deep build), claimed (tiers claimed per Deed), fresh (zero lifetime stats).
+ */
 export function saveFromParams(q: URLSearchParams): Save {
   const num = (k: string, d: number) => (q.has(k) ? Number(q.get(k)) : d);
   const s = newSave(1234);
@@ -33,7 +40,18 @@ export function saveFromParams(q: URLSearchParams): Save {
   for (let i = 0; i < offers; i++) s.relicOffers.push(RELICS.slice(6 + i * 3, 9 + i * 3 + (q.has('insight') ? 1 : 0)).map((r) => r.id));
   if (q.has('order')) s.progress.order = q.get('order') as OrderId;
   s.progress.acolytes[1] = 'ward_tank';
-  s.lifetime = { ...s.lifetime, healed: 1.234e6, perfects: 342, saves: 120, kills: 8765, gold: 3.2e7, floors: 412, wipes: 23, seconds: 51234 };
+  s.lifetime = {
+    ...s.lifetime, healed: 1.234e6, perfects: 342, saves: 120, kills: 8765, gold: 3.2e7, floors: 412, wipes: 23, seconds: 51234,
+    bosses: 4, flawlessBosses: 1, bestStreak: 4, fullChains: 12, revives: 30, sanctuaries: 3,
+  };
+  if (q.has('fresh')) for (const k of Object.keys(s.lifetime) as (keyof Save['lifetime'])[]) s.lifetime[k] = 0;
+  s.healerLevel = num('hlv', 1);
+  s.healerXp = num('hxp', 0);
+  const tal = num('tal', 0);
+  if (tal >= 1) Object.assign(s.progress.talents, { swift_hands: 3, triage: 1, thick_ward: 2, deep_breath: 1 });
+  if (tal >= 2) Object.assign(s.progress.talents, { swift_hands: 5, triage: 3, second_touch: 2, overflow: 1, battle_hymn: 2 });
+  const claimed = num('claimed', 0);
+  if (claimed > 0) for (const d of DEEDS) s.progress.deeds[d.id] = Math.min(d.tiers.length, claimed);
   return s;
 }
 
@@ -113,6 +131,21 @@ export function makeMockGame(save: Save, q: URLSearchParams): Game {
         return false;
       }
     },
+    learnTalent: (id) => {
+      if (learnTalent(save, id)) bump();
+    },
+    resetTalents: () => {
+      resetTalents(save);
+      toast('Talent points refunded', 'info');
+      bump();
+    },
+    claimDeed: (id) => {
+      const gold = claimDeed(save, id);
+      if (gold === null) return;
+      const d = deedDef(id);
+      toast(`${d.name}: +${Math.round(d.per * 100)}% ${BONUS_LABEL[d.bonus]}`, 'gold');
+      bump();
+    },
     uiTap: (ok = true) => console.debug('uiTap', ok),
   };
   // Passive income so numbers move like the real game.
@@ -128,6 +161,8 @@ export function makeMockGame(save: Save, q: URLSearchParams): Game {
 function applyParams(game: Game, q: URLSearchParams): void {
   const sheet = q.get('sheet');
   if (sheet && TABS.some((t) => t.id === sheet)) game.sheet.value = sheet as SheetId;
+  const seg = q.get('seg');
+  if (seg === 'talents' || seg === 'spells' || seg === 'relics') healerSeg.value = seg;
   const m = q.get('modal');
   if (m === 'offline') {
     game.modal.value = {
@@ -135,7 +170,7 @@ function applyParams(game: Game, q: URLSearchParams): void {
       report: { seconds: 3 * 3600 + 25 * 60, gold: 1.42e6, fromFloor: game.save.floor - 6, toFloor: game.save.floor, kills: 1834, relics: Number(q.get('offers') ?? 0) },
     };
   } else if (m?.startsWith('unlock-')) {
-    game.modal.value = { kind: 'unlock', id: m.slice(7) as 'acolytes' | 'pilgrimage' | 'relics' };
+    game.modal.value = { kind: 'unlock', id: m.slice(7) as UnlockId };
   } else if (m === 'relic' || m === 'pilgrimage' || m === 'settings' || m === 'welcome') {
     game.modal.value = { kind: m };
   }

@@ -1,6 +1,8 @@
 // What the nav shows: which tabs are locked, why, and which have something to do.
 import type { SheetId } from '../app/game.ts';
 import type { Save } from '../meta/save.ts';
+import { readyDeeds } from '../meta/deeds.ts';
+import { unspentPoints } from '../meta/healer.ts';
 import { canPilgrimage } from '../meta/pilgrimage.ts';
 import { devotionUpgradeCost, goldUpgradeCost, goldUpgradeVisible, heroCost } from '../meta/shop.ts';
 import { HERO_IDS } from '../sim/data/heroes.ts';
@@ -20,17 +22,17 @@ export interface TabDef {
 export const TABS: readonly TabDef[] = [
   { id: 'fight', label: 'Fight', icon: 'sword' },
   { id: 'party', label: 'Party', icon: 'heart' },
-  { id: 'spells', label: 'Spells', icon: 'mend' },
+  { id: 'healer', label: 'Healer', icon: 'mend' },
   { id: 'acolytes', label: 'Acolytes', icon: 'acolyte' },
-  { id: 'relics', label: 'Relics', icon: 'relic' },
+  { id: 'deeds', label: 'Deeds', icon: 'crown' },
   { id: 'pilgrim', label: 'Pilgrim', icon: 'pilgrim' },
 ];
 
 export const SHEET_TITLES: Record<SheetId, string> = {
   party: 'Party',
-  spells: 'Spells',
+  healer: 'Healer',
   acolytes: 'Acolytes',
-  relics: 'Relics',
+  deeds: 'Deeds',
   pilgrim: 'Pilgrimage',
 };
 
@@ -42,12 +44,6 @@ export function pilgrimUnlocked(save: Save): boolean {
   return canPilgrimage(save) || save.pilgrimages > 0;
 }
 
-export function relicsUnlocked(save: Save): boolean {
-  return (
-    save.relicOffers.length > 0 || save.progress.relics.length > 0 || save.pilgrimages > 0 || save.bestFloor > 10
-  );
-}
-
 /** Null when open, otherwise what unlocks it. */
 export function lockReason(save: Save, tab: TabId): string | null {
   switch (tab) {
@@ -55,8 +51,6 @@ export function lockReason(save: Save, tab: TabId): string | null {
       return acolytesUnlocked(save) ? null : `Acolytes join you at floor ${T.acolyteFloorUnlock}`;
     case 'pilgrim':
       return pilgrimUnlocked(save) ? null : `Pilgrimage opens at floor ${T.pilgrimageFloor}`;
-    case 'relics':
-      return relicsUnlocked(save) ? null : 'Defeat the floor 10 boss to find relics';
     default:
       return null;
   }
@@ -72,18 +66,25 @@ function anyGoldAffordable(save: Save, aco: boolean): boolean {
   });
 }
 
+/** Healer sheet segments with something to do. */
+export const segBadge = {
+  talents: (save: Save) => unspentPoints(save) > 0,
+  spells: (save: Save) => anyGoldAffordable(save, false),
+  relics: (save: Save) => save.relicOffers.length > 0,
+};
+
 /** A dot badge: something affordable or waiting on that tab. */
 export function hasBadge(save: Save, tab: TabId): boolean {
   if (lockReason(save, tab)) return false;
   switch (tab) {
     case 'party':
       return HERO_IDS.some((id) => heroCost(id, save.progress.heroLevels[id]) <= save.gold);
-    case 'spells':
-      return anyGoldAffordable(save, false);
+    case 'healer':
+      return segBadge.talents(save) || segBadge.relics(save);
     case 'acolytes':
       return anyGoldAffordable(save, true);
-    case 'relics':
-      return save.relicOffers.length > 0;
+    case 'deeds':
+      return readyDeeds(save).length > 0;
     case 'pilgrim':
       return DEVOTION_UPGRADES.some((u) => {
         const c = devotionUpgradeCost(save, u.id);

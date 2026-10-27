@@ -1,0 +1,173 @@
+/* Healer sheet (segments, level, talent tree) and Deeds. */
+
+/* Segments and badges */
+.seg-btn { position: relative; }
+.seg-full { width: calc(100% - 6px); }
+.seg-full .seg-btn { flex: 1; height: 44px; font-size: 15px; }
+.seg-dot {
+  position: absolute; top: 5px; right: 6px; width: 8px; height: 8px; background: var(--bad);
+  box-shadow: 0 0 0 2px var(--line); animation: badge-pop 0.3s ease-out;
+}
+.nav-badge.is-pulse { animation: badge-pop 0.3s ease-out, badge-pulse 0.9s 0.3s ease-in-out infinite; }
+
+/* Bars */
+.bar {
+  --fill: var(--good); --fill-hi: #c9f5c9;
+  position: relative; height: 14px; overflow: hidden; background: var(--ink);
+  box-shadow: 0 0 0 2px var(--line), inset 0 3px 0 rgba(0, 0, 0, 0.4);
+}
+.bar i {
+  display: block; height: 100%; background: linear-gradient(var(--fill-hi) 0 3px, var(--fill) 3px);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.22); transition: width 0.35s ease-out;
+}
+
+/* Healer level */
+.hl-panel { display: flex; flex-direction: column; gap: 10px; }
+.hl-top { display: flex; align-items: center; gap: 10px; }
+.hl-level, .hl-points {
+  width: 56px; height: 56px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; line-height: 1; background: var(--ink);
+}
+.hl-level { box-shadow: inset 0 0 0 3px var(--good), inset 0 -6px 0 rgba(0, 0, 0, 0.35); }
+.hl-level span, .hl-points span { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.hl-level b { font-size: 26px; color: var(--good); margin-top: 2px; }
+.hl-xp { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.hl-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+.hl-xp-num { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.hl-points { box-shadow: inset 0 0 0 2px #2c3360; }
+.hl-points b { font-size: 24px; margin-bottom: 2px; }
+.hl-points.has-points { box-shadow: inset 0 0 0 3px var(--gold); animation: glow 1.4s ease-in-out infinite; }
+.hl-points.has-points b { color: var(--gold); }
+.hl-foot { display: flex; align-items: center; gap: 8px; }
+.hl-foot .hint-text { flex: 1; }
+.hl-reset { min-height: 40px; font-size: 14px; padding: 4px 12px; flex-shrink: 0; }
+.hl-confirm p { font-size: 13px; line-height: 1.35; color: var(--bad); margin-bottom: 8px; }
+
+/* Talent tree: three branch columns, one grid row per tier, wires between tiers. */
+.tree { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 6px; margin: 3px; }
+.tree-head {
+  display: flex; flex-direction: column; align-items: center; padding: 8px 2px 6px; text-align: center;
+  background: color-mix(in srgb, var(--br) 22%, var(--bg2)); box-shadow: inset 0 3px 0 var(--br), inset 0 -2px 0 var(--line);
+}
+.tree-head b { font-size: 15px; color: var(--br); }
+.tree-head span { font-size: 11px; color: var(--dim); }
+.tree-cell {
+  --wire: #343b68;
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; padding: 14px 0; min-height: 88px; background: color-mix(in srgb, var(--br) 7%, var(--bg2));
+}
+.tree-cell.is-last { box-shadow: inset 0 -3px 0 color-mix(in srgb, var(--br) 30%, var(--line)); }
+.tree-cell.wire-up::before, .tree-cell.wire-down::after {
+  content: ''; position: absolute; left: 50%; width: 4px; margin-left: -2px; background: var(--wire);
+}
+.tree-cell.wire-up::before { top: 0; height: 50%; }
+.tree-cell.wire-down::after { top: 50%; bottom: 0; }
+.tree-cell.wire-up.is-open::before, .tree-cell.wire-down.next-open::after {
+  background: var(--br); box-shadow: 0 0 6px color-mix(in srgb, var(--br) 60%, transparent);
+}
+.tree-nodes { position: relative; z-index: 1; display: flex; gap: 8px; }
+.tree-nodes.is-pair::before {
+  content: ''; position: absolute; z-index: -1; left: 22px; right: 22px; top: 20px; height: 4px; background: var(--wire);
+}
+.tree-cell.is-open .tree-nodes.is-pair::before { background: var(--br); }
+.tree-need {
+  position: relative; z-index: 1; font-size: 10px; color: var(--dim); background: var(--line); padding: 2px 5px 1px;
+  white-space: nowrap;
+}
+.tnode-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.tnode {
+  position: relative; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+  background: var(--ink); box-shadow: 0 0 0 3px var(--line), inset 0 0 0 2px #3a4170, inset 0 -4px 0 rgba(0, 0, 0, 0.35);
+  transition: transform 0.08s;
+}
+.tnode:active { transform: scale(0.9); }
+.tnode.is-locked { background: #10132a; }
+.tnode.is-locked > .icon { filter: grayscale(1) brightness(0.55); }
+.tnode-lock { position: absolute; right: -5px; bottom: -5px; padding: 1px; background: var(--line); }
+.tnode.is-learnable {
+  box-shadow: 0 0 0 3px var(--line), inset 0 0 0 2px var(--br), inset 0 -4px 0 rgba(0, 0, 0, 0.35);
+  animation: node-glow 1.2s ease-in-out infinite;
+}
+.tnode.is-learned {
+  background: color-mix(in srgb, var(--br) 32%, var(--ink));
+  box-shadow: 0 0 0 3px var(--line), inset 0 0 0 2px var(--br), inset 0 -4px 0 rgba(0, 0, 0, 0.3);
+}
+.tnode.is-max {
+  background: color-mix(in srgb, var(--br) 50%, var(--ink));
+  box-shadow: 0 0 0 3px var(--line), 0 0 0 4px var(--br), inset 0 0 0 2px var(--text), inset 0 -4px 0 rgba(0, 0, 0, 0.3);
+}
+.tnode.is-selected { outline: 2px dashed var(--text); outline-offset: 6px; }
+.pips { display: flex; gap: 3px; }
+.pips i { width: 6px; height: 6px; background: #262c52; box-shadow: 0 0 0 1px var(--line); }
+.pips i.on { background: var(--br, var(--gold)); }
+.pips i.ready { background: var(--text); animation: pulse-soft 0.8s ease-in-out infinite; }
+
+/* Talent detail, docked to the bottom of the sheet while open */
+.tdetail {
+  position: sticky; bottom: 0; z-index: 5; display: flex; flex-direction: column; gap: 7px; margin: 3px;
+  padding: 10px 12px 12px; background: var(--panel2);
+  box-shadow: var(--border), inset 0 3px 0 var(--br), 0 -12px 18px rgba(0, 0, 0, 0.55);
+  animation: drop-in 0.18s ease-out both;
+}
+.tdetail-head { display: flex; align-items: center; gap: 10px; }
+.tdetail-icon {
+  width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--br) 28%, var(--ink)); box-shadow: inset 0 0 0 2px var(--br);
+}
+.tdetail-title { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.tdetail-title b { font-size: 18px; color: var(--br); }
+.tdetail-title span { font-size: 12px; color: var(--dim); }
+.tdetail-line { font-size: 13px; line-height: 1.35; color: #e6dfca; }
+.tag {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 5px 1px; margin-right: 4px;
+  background: var(--ink); color: var(--dim);
+}
+.tag-next { color: var(--good); }
+.tdetail-need { font-size: 12px; color: var(--bad); }
+.tdetail-learn { width: calc(100% - 6px); margin-top: 4px; }
+.tdetail-max { margin-top: 4px; }
+
+/* Deeds */
+.deed-bonuses .bonus-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.bonus-chip {
+  font-size: 12px; padding: 4px 8px 3px; background: var(--ink); color: #ddd6c2; box-shadow: inset 0 0 0 2px #2c3360;
+}
+.bonus-chip b { color: var(--good); }
+.deeds-ready { order: 2; }
+.deed-card { display: flex; flex-direction: column; gap: 8px; }
+.deed-top { display: flex; align-items: center; gap: 10px; }
+.deed-main { flex: 1; min-width: 0; }
+.deed-text { font-size: 13px; color: #ddd6c2; line-height: 1.3; margin-top: 2px; }
+.deed-pips { --br: var(--gold); margin-left: auto; }
+.deed-pips i { width: 8px; height: 8px; }
+.deed-progress { display: flex; align-items: center; gap: 10px; margin: 0 2px; }
+.deed-bar { flex: 1; height: 12px; --fill: var(--mana); --fill-hi: #bfe3ff; }
+.deed-bar.is-full { --fill: var(--gold); --fill-hi: #fff0b3; }
+.deed-count { font-size: 12px; color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.deed-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 24px; }
+.deed-reward { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; font-size: 12px; min-width: 0; }
+.reward-bonus { color: var(--good); }
+.reward-gold { display: flex; align-items: center; gap: 4px; color: var(--gold); }
+.claim-btn { min-width: 124px; font-size: 20px; overflow: hidden; }
+.deed-card.is-ready {
+  background: color-mix(in srgb, var(--gold) 9%, var(--panel));
+  box-shadow: var(--border), inset 0 0 0 2px var(--gold), inset 0 -3px 0 var(--lo);
+}
+.deed-card.is-complete { background: color-mix(in srgb, var(--gold) 5%, var(--bg2)); }
+.deed-card.is-complete .up-name { color: var(--gold); }
+.deed-card.is-complete .deed-text { opacity: 0.7; }
+.shine::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.6) 50%, transparent 65%) no-repeat;
+  background-size: 250% 100%; animation: shine 1.9s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 2px var(--line), 0 0 0 2px rgba(255, 107, 107, 0); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 2px var(--line), 0 0 0 3px rgba(255, 107, 107, 0.3); }
+}
+@keyframes node-glow {
+  0%, 100% { filter: drop-shadow(0 0 0 transparent); }
+  50% { filter: drop-shadow(0 0 7px var(--br)); }
+}
+@keyframes shine { 0% { background-position: 130% 0; } 60%, 100% { background-position: -30% 0; } }

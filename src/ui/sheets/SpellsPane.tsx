@@ -91,11 +91,11 @@ function lockedFloor(save: Save, id: GoldUpgradeId): number | null {
   return 'unlockFloor' in def ? def.unlockFloor : 0;
 }
 
-export function SpellsSheet({ game }: { game: Game }) {
+export function SpellsPane({ game }: { game: Game }) {
   const save = useSave(game);
   const ups = GOLD_UPGRADES.filter((u) => !isAco(u.id));
   return (
-    <div class="sheet-body">
+    <>
       <SectionTitle>Upgrades</SectionTitle>
       {ups.map((u) => {
         const floor = lockedFloor(save, u.id);
@@ -106,7 +106,7 @@ export function SpellsSheet({ game }: { game: Game }) {
         );
       })}
       <HowToHeal game={game} />
-    </div>
+    </>
   );
 }
 

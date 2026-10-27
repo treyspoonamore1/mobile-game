@@ -84,14 +84,16 @@ export function IconWell({ id, color, scale = 3 }: { id: IconName; color?: strin
 interface SegProps<T extends string | number> {
   game: Game;
   value: T;
-  options: { value: T; label: string }[];
+  /** `dot` marks a segment with something waiting. */
+  options: { value: T; label: string; dot?: boolean }[];
   onChange: (v: T) => void;
+  class?: string;
 }
 
 /** Segmented toggle (e.g. x1 / x10 / Max). */
-export function Seg<T extends string | number>({ game, value, options, onChange }: SegProps<T>) {
+export function Seg<T extends string | number>({ game, value, options, onChange, class: cls }: SegProps<T>) {
   return (
-    <div class="seg" role="radiogroup">
+    <div class={`seg ${cls ?? ''}`} role="radiogroup">
       {options.map((o) => (
         <button
           type="button"
@@ -104,6 +106,7 @@ export function Seg<T extends string | number>({ game, value, options, onChange 
           }}
         >
           {o.label}
+          {o.dot && <span class="seg-dot" />}
         </button>
       ))}
     </div>
