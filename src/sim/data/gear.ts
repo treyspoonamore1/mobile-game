@@ -28,8 +28,8 @@ export const RARITIES = [
   { name: 'Worn', color: '#b8b8c8', weight: 60, mainMult: 1, affixes: 0 },
   { name: 'Fine', color: '#7ee07e', weight: 28, mainMult: 1.4, affixes: 1 },
   { name: 'Runed', color: '#5bb4ff', weight: 9, mainMult: 1.9, affixes: 1 },
-  { name: 'Heroic', color: '#c48cff', weight: 2.5, mainMult: 2.2, affixes: 2 },
-  { name: 'Mythic', color: '#ffaa3b', weight: 0.5, mainMult: 2.7, affixes: 3 },
+  { name: 'Heroic', color: '#c48cff', weight: 2.5, mainMult: 2.1, affixes: 2 },
+  { name: 'Mythic', color: '#ffaa3b', weight: 0.5, mainMult: 2.5, affixes: 3 },
 ] as const;
 
 /** What a point of each affix means, for item cards. */
