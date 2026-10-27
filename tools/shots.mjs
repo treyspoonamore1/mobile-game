@@ -63,7 +63,7 @@ page = page2;
 await page.goto(url);
 await page.waitForTimeout(3500);
 await shot('04-midgame');
-for (const tab of ['Party', 'Spells', 'Acolytes', 'Relics', 'Pilgrim']) {
+for (const tab of ['Party', 'Healer', 'Acolytes', 'Deeds', 'Pilgrim']) {
   await page.getByRole('button', { name: new RegExp(tab, 'i') }).first().click().catch(() => {});
   await page.waitForTimeout(500);
   await shot(`05-sheet-${tab.toLowerCase()}`);
