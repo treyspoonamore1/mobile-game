@@ -14,7 +14,25 @@ import { PRAYERS, type PrayerId } from '../src/sim/data/prayers.ts';
 import type { RelicId } from '../src/sim/data/relics.ts';
 import type { TalentId } from '../src/sim/data/talents.ts';
 import { DEVOTION_UPGRADES, GOLD_UPGRADES, type DevotionUpgradeId } from '../src/sim/data/upgrades.ts';
+import { noviceBot, type Bot } from '../src/sim/bots.ts';
+import { DT } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
+import { T } from '../src/sim/tuning.ts';
+
+/** A casual player: the novice bot, but they also tap a fallen hero's grey frame when they have the mana. */
+export function casualBot(): Bot {
+  const base = noviceBot();
+  let cd = 0;
+  return (s) => {
+    cd -= DT;
+    const down = s.heroes.findIndex((h) => !h.alive);
+    if (s.phase === 'fight' && down >= 0 && cd <= 0 && s.mana >= T.reviveCost && s.heroes.some((h) => h.alive)) {
+      cd = 1.5;
+      return [{ kind: 'mend', hero: down }];
+    }
+    return base(s);
+  };
+}
 
 const PRAYER_PRIORITY: PrayerId[] = ['mend_lowest', 'ward_telegraphed', 'top_up', 'ward_tank', 'cleanse', 'mend_all', 'revive', 'mend_tank'];
 

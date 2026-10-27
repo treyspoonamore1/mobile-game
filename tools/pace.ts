@@ -1,17 +1,18 @@
 // Pacing probe: how long floors take, how often the player can buy something, and how often
 // something new happens, over the first N minutes of a fresh save.
 //   node --experimental-strip-types tools/pace.ts [--minutes 90] [--bot skilled|novice] [--set k=v,...] [--quiet]
+// --bot novice is the casual player of tools/policy.ts (taps the lowest hero, revives fallen ones).
 // Uses the same player policy as tools/balance.ts (tools/policy.ts): shops, picks relics, sets Prayers,
 // learns talents, claims Deeds and goes on Pilgrimage (unless --no-pilgrimage).
 import { pilgrimage } from '../src/meta/pilgrimage.ts';
 import { newSave } from '../src/meta/save.ts';
 import { applyEvents, newFight, refreshLoadout } from '../src/meta/session.ts';
-import { noviceBot, skilledBot } from '../src/sim/bots.ts';
+import { skilledBot } from '../src/sim/bots.ts';
 import { HERO_IDS } from '../src/sim/data/heroes.ts';
 import { DT, step } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
 import { T } from '../src/sim/tuning.ts';
-import { assignPrayers, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
+import { assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => {
@@ -25,7 +26,7 @@ for (const kv of arg('set', '').split(',').filter(Boolean)) {
 const minutes = Number(arg('minutes', '90'));
 const quiet = args.includes('--quiet');
 const noPilgrimage = args.includes('--no-pilgrimage');
-const makeBot = () => (arg('bot', 'skilled') === 'novice' ? noviceBot() : skilledBot());
+const makeBot = () => (arg('bot', 'skilled') === 'novice' ? casualBot() : skilledBot());
 let bot = makeBot();
 
 const save = newSave(Number(arg('seed', '1')));

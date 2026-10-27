@@ -32,7 +32,7 @@ export const T = {
   /** Attacks that hit the whole party count this many times in a damage budget. */
   partyAttackWeight: 2,
   /** A boss's damage budget (before bossFloorMult), in the same units. */
-  bossThreat: 1.8,
+  bossThreat: 1.5,
   packGoldUnits: 3,
   /** Budget ramp inside a region: floor x1 gets packRampStart, each later floor adds packRampPerFloor. */
   packRampStart: 0.8,

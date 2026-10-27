@@ -4,12 +4,12 @@ import { pilgrimage, startFloor } from '../src/meta/pilgrimage.ts';
 import { floorGold } from '../src/sim/floors.ts';
 import { newSave } from '../src/meta/save.ts';
 import { applyEvents, newFight, refreshLoadout } from '../src/meta/session.ts';
-import { idleBot, noviceBot, skilledBot, type Bot } from '../src/sim/bots.ts';
+import { idleBot, skilledBot, type Bot } from '../src/sim/bots.ts';
 import type { DevotionUpgradeId } from '../src/sim/data/upgrades.ts';
 import { DT, step } from '../src/sim/fight.ts';
 import { acolyteSlots } from '../src/sim/loadout.ts';
 import { T } from '../src/sim/tuning.ts';
-import { assignPrayers, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
+import { assignPrayers, casualBot, claimDeeds, learnTalents, pickRelics, shop, shopDevotion, wantsPilgrimage } from './policy.ts';
 
 const args = process.argv.slice(2);
 const arg = (k: string, d: string) => {
@@ -28,20 +28,6 @@ const noPilgrimage = args.includes('--no-pilgrimage');
 for (const kv of arg('set', '').split(',').filter(Boolean)) {
   const [k, v] = kv.split('=');
   (T as unknown as Record<string, number>)[k!] = Number(v);
-}
-/** A casual player: the novice bot, but they also tap a fallen hero's grey frame when they have the mana. */
-function casualBot(): Bot {
-  const base = noviceBot();
-  let cd = 0;
-  return (s) => {
-    cd -= DT;
-    const down = s.heroes.findIndex((h) => !h.alive);
-    if (s.phase === 'fight' && down >= 0 && cd <= 0 && s.mana >= T.reviveCost && s.heroes.some((h) => h.alive)) {
-      cd = 1.5;
-      return [{ kind: 'mend', hero: down }];
-    }
-    return base(s);
-  };
 }
 const makeBot = (): Bot => (botName === 'idle' ? idleBot : botName === 'novice' ? casualBot() : skilledBot());
 
