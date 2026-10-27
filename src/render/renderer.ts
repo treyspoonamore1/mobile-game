@@ -52,7 +52,13 @@ export class Renderer {
       switch (e.type) {
         case 'heal': {
           const p = heroPos(L, e.hero);
-          if (e.amount >= 1 && this.showNumbers) fx.text(`+${short(e.amount)}`, p.x, p.y - 18, e.beat ? '#e2b8ff' : '#7ee07e');
+          if (e.kind === 'bloom') {
+            // Lifebloom pulses are small and frequent: keep them quiet.
+            if (e.amount >= 1 && this.showNumbers) fx.text(`+${short(e.amount)}`, p.x - 6, p.y - 14, '#b9f5a0', 0.75);
+            break;
+          }
+          const color = e.beat ? '#e2b8ff' : e.kind === 'splash' ? '#b9f5a0' : '#7ee07e';
+          if (e.amount >= 1 && this.showNumbers) fx.text(`+${short(e.amount)}`, p.x, p.y - 18, color, e.kind === 'splash' ? 0.85 : 1);
           fx.sprite('fx_heal', 'idle', p.x, p.y - 2, 0.06, 4);
           this.anim.flash[e.hero] = 0.6;
           break;
@@ -144,6 +150,11 @@ export class Renderer {
         case 'anthem': {
           const p = healerPos(L);
           fx.burst(p.x, p.y - 10, '#e2b8ff', 16, 50, 0.7);
+          break;
+        }
+        case 'stun': {
+          const p = enemyPos(L, s, e.enemy);
+          fx.text('STUNNED', p.x, p.y - 30, '#ffe14a', 0.95, true);
           break;
         }
         case 'cleanse': {

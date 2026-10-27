@@ -188,6 +188,13 @@ function drawHero(g: CanvasRenderingContext2D, L: Layout, s: FightState, i: numb
     const a = Math.min(1, h.shieldT / 0.8) * (0.75 + 0.25 * Math.sin(now * 6));
     bubble(g, x, y - 8, 11, 11, '#8fd3ff', a);
   }
+  if (h.alive && h.bloomT > 0) {
+    // Lifebloom: green petals rising around the hero.
+    for (let k = 0; k < 3; k++) {
+      const t = (now * 0.8 + k / 3 + i * 0.13) % 1;
+      px(g, x - 6 + ((k * 5 + i * 3) % 12), y - 2 - t * 18, 2, 2, t < 0.5 ? '#9cff7a' : '#d8ffc0');
+    }
+  }
   if (h.alive && h.poisonT > 0 && Math.floor(now * 3 + i) % 2 === 0) {
     px(g, x - 4 + ((now * 7 + i * 3) % 8), y - 16 - ((now * 9) % 6), 2, 2, '#8be04e');
   }
@@ -253,6 +260,17 @@ function drawEnemy(g: CanvasRenderingContext2D, L: Layout, s: FightState, i: num
     const ey = y - size.h - 10 - Math.round(Math.abs(Math.sin(now * 8)) * 2);
     px(g, x - 1, ey, 3, 5, '#ffe14a');
     px(g, x - 1, ey + 6, 3, 2, '#ffe14a');
+  }
+  if (e.alive && e.stunT > 0) {
+    // Riposte: little stars circling the head.
+    const cy = y - size.h - 3;
+    for (let k = 0; k < 3; k++) {
+      const a = now * 6 + (k * Math.PI * 2) / 3;
+      const sx = x + Math.cos(a) * 6;
+      const sy = cy + Math.sin(a) * 2;
+      px(g, sx - 1, sy, 3, 1, '#ffe14a');
+      px(g, sx, sy - 1, 1, 3, '#ffe14a');
+    }
   }
 }
 

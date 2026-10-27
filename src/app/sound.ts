@@ -6,12 +6,16 @@ export function soundEvents(events: readonly SimEvent[]): void {
   let chained = false;
   for (const e of events) {
     switch (e.type) {
+      case 'stun':
+        playSfx('crit', { pitch: 0.7, vol: 0.6 });
+        break;
       case 'heal':
+        if (e.kind === 'bloom') break;
         if (e.kind === 'chain') {
           if (!chained) playSfx('chain');
           chained = true;
         } else if (e.kind === 'rewind') playSfx('heal_big', { pitch: 0.8 });
-        else if (e.by === 'acolyte') playSfx('heal', { vol: 0.35, pitch: 1.25 });
+        else if (e.by === 'acolyte' || e.kind === 'splash') playSfx('heal', { vol: 0.35, pitch: 1.25 });
         else playSfx(e.beat ? 'heal_big' : 'heal');
         break;
       case 'shield':
