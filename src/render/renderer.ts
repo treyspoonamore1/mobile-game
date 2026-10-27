@@ -1,5 +1,5 @@
 import { isBossFloor, regionOf } from '../sim/data/regions.ts';
-import { enrageMult } from '../sim/fight.ts';
+import { enrageMult, floorThreat } from '../sim/fight.ts';
 import { T } from '../sim/tuning.ts';
 import type { FightState, SimEvent } from '../sim/state.ts';
 import { getFrames } from './art/index.ts';
@@ -179,6 +179,9 @@ export class Renderer {
         case 'wipe':
           fx.banner('THE PARTY HAS FALLEN', `Back to floor ${e.checkpoint}`, '#ff6b6b', 2.4);
           break;
+        case 'retreat':
+          fx.banner('TOO TOUGH FOR NOW', `Farming floor ${e.farm}, then trying ${e.wall} again`, '#ffcf4a', 2.6);
+          break;
         default:
           break;
       }
@@ -296,10 +299,16 @@ export class Renderer {
 
   private drawHud(g: CanvasRenderingContext2D, s: FightState, L: Layout): void {
     if (s.phase === 'fight') {
+      // Danger: how hard this floor hits your frailest hero.
+      const top = isBossFloor(s.floor) ? 58 : 18;
+      const threat = floorThreat(s);
+      const tColor = threat.level === 'easy' ? '#7ee07e' : threat.level === 'tough' ? '#ffcf4a' : '#ff5a5a';
+      const tText = threat.level === 'easy' ? 'Easy' : threat.level === 'tough' ? 'Tough' : 'Deadly';
+      drawText(g, `● ${tText}`, 12, top, { size: 12, color: tColor, outline: '#0b0d1a', outlineW: 4 });
       // Enrage: a countdown in the last 10 s, then the growing damage multiplier.
       const after = isBossFloor(s.floor) ? T.enrageAfterBoss : T.enrageAfter;
       const left = after - s.phaseT;
-      const y = isBossFloor(s.floor) ? 58 : 18;
+      const y = top + 18;
       const mult = enrageMult(s);
       if (mult > 1) {
         const pulse = 0.6 + 0.4 * Math.sin(this.scene.now * 10);
@@ -312,7 +321,10 @@ export class Renderer {
     if (boss) return;
     const alive = s.enemies.filter((e) => e.alive).length;
     if (s.phase === 'walk') {
-      drawText(g, s.autoAdvance ? `Onward to floor ${s.floor}…` : `Again: floor ${s.floor}`, L.w / 2, 18, { size: 13, color: '#c9c9e0', align: 'center', outline: '#0b0d1a', outlineW: 4 });
+      const text = s.farmLeft > 0 && s.floor >= s.farmFloor
+        ? `Farming floor ${s.floor} · ${s.farmLeft} more, then onward`
+        : s.autoAdvance ? `Onward to floor ${s.floor}…` : `Again: floor ${s.floor}`;
+      drawText(g, text, L.w / 2, 18, { size: 13, color: '#c9c9e0', align: 'center', outline: '#0b0d1a', outlineW: 4 });
     } else if (alive > 0) {
       drawText(g, `${alive} ${alive === 1 ? 'foe' : 'foes'}`, L.w - 12, 18, { size: 12, color: '#9aa0c3', align: 'right', outline: '#0b0d1a', outlineW: 4 });
     }

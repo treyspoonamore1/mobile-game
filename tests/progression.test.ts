@@ -4,7 +4,7 @@ import { gainXp, learnTalent, resetTalents, unspentPoints, xpToNext } from '../s
 import { pilgrimage } from '../src/meta/pilgrimage.ts';
 import { newSave } from '../src/meta/save.ts';
 import { applyEvents, newFight } from '../src/meta/session.ts';
-import { damageHero, healHero } from '../src/sim/combat.ts';
+import { damageHero, downHero, healHero } from '../src/sim/combat.ts';
 import { createFight, step } from '../src/sim/fight.ts';
 import { buildLoadout } from '../src/sim/loadout.ts';
 import type { FightState } from '../src/sim/state.ts';
@@ -79,7 +79,7 @@ describe('talent effects', () => {
 
   it('Miracle: Sanctuary raises the fallen', () => {
     const s = fight({ miracle: 1 });
-    damageHero(s, 1, 1e9, { enemy: 0, big: false, dodgeable: false });
+    downHero(s, 1);
     s.resonance = 100;
     step(s, [{ kind: 'sanctuary' }]);
     expect(s.heroes[1]!.alive).toBe(true);

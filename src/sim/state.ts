@@ -106,6 +106,11 @@ export interface FightState {
   histTimer: number;
   /** Heroes that fell on this floor (for flawless clears). */
   downsThisFloor: number;
+  /** Auto-retreat: the floor the party keeps wiping on, how many times, and the farming that follows. */
+  wallFloor: number;
+  wallWipes: number;
+  farmFloor: number;
+  farmLeft: number;
 }
 
 export type SpellKind = 'mend' | 'ward' | 'chain' | 'revive' | 'rewind' | 'anthem' | 'cleanse' | 'splash' | 'bloom';
@@ -134,7 +139,8 @@ export type SimEvent =
   | { type: 'acolyteCast'; acolyte: number; hero: number; kind: SpellKind }
   | { type: 'floorStart'; floor: number; boss: boolean }
   | { type: 'floorClear'; floor: number; boss: boolean; flawless: boolean }
-  | { type: 'wipe'; floor: number; checkpoint: number };
+  | { type: 'wipe'; floor: number; checkpoint: number }
+  | { type: 'retreat'; wall: number; farm: number; clears: number };
 
 export type Action =
   | { kind: 'mend'; hero: number }

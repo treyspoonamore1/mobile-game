@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { skilledBot } from '../src/sim/bots.ts';
-import { damageHero, healHero } from '../src/sim/combat.ts';
+import { damageHero, downHero, healHero } from '../src/sim/combat.ts';
 import { devotionFor } from '../src/meta/pilgrimage.ts';
 import { createFight, enrageMult, step } from '../src/sim/fight.ts';
 import { checkpointOf, floorEnemies, floorPack, wipeCheckpoint } from '../src/sim/floors.ts';
@@ -130,7 +130,7 @@ describe('spells', () => {
 
   it('tapping a downed hero revives them', () => {
     const s = fight();
-    damageHero(s, 2, 9999, { enemy: 0, big: false, dodgeable: false });
+    downHero(s, 2);
     expect(s.heroes[2]!.alive).toBe(false);
     step(s, [{ kind: 'mend', hero: 2 }]);
     expect(s.heroes[2]!.alive).toBe(true);
@@ -184,5 +184,22 @@ describe('spells', () => {
     let cast = false;
     for (let i = 0; i < 120 && !cast; i++) cast = step(s).some((e) => e.type === 'acolyteCast');
     expect(cast).toBe(true);
+  });
+
+  it('no surprise one-shots: hits are capped by the target\'s max life (until enrage)', () => {
+    const s = fight();
+    const h = s.heroes[2]!;
+    const max = h.stats.maxHp;
+    // Three times the cap: the soft cap keeps the blow well under max life.
+    damageHero(s, 2, max * 0.9, { enemy: 0, big: false, dodgeable: false });
+    expect(h.alive).toBe(true);
+    expect(max - h.hp).toBeLessThan(max * 0.45);
+    expect(max - h.hp).toBeGreaterThan(max * 0.3);
+    h.hp = max;
+    damageHero(s, 2, max * 1.2, { enemy: 0, big: true, dodgeable: false });
+    expect(h.alive).toBe(true);
+    h.hp = max;
+    damageHero(s, 2, max, { enemy: 0, big: true, dodgeable: false, enrage: 8 });
+    expect(h.alive).toBe(false);
   });
 });

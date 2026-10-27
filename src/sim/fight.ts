@@ -31,7 +31,7 @@ export function createFight(loadout: Loadout, floor: number, seed: number, autoA
       healed: 0, overheal: 0, absorbed: 0, perfects: 0, saves: 0, kills: 0, damage: 0, gold: 0,
       floorsCleared: 0, wipes: 0,
     },
-    events: [], histTimer: 0, downsThisFloor: 0,
+    events: [], histTimer: 0, downsThisFloor: 0, wallFloor: 0, wallWipes: 0, farmFloor: 0, farmLeft: 0,
   };
   return s;
 }
@@ -201,7 +201,7 @@ function stepEnemies(s: FightState, dt: number): void {
         e.windup = null;
         e.attackAt = s.t;
         s.events.push({ type: 'enemyAttack', enemy: ei, targets: w.targets, big: true });
-        for (const i of w.targets) hit(s, ei, i, w.attack.mult, true, w.attack.poison);
+        for (const i of w.targets) hit(s, ei, i, w.attack.mult, true, w.attack.poison, w.attack.target === 'all');
       }
       return;
     }
@@ -220,21 +220,22 @@ function stepEnemies(s: FightState, dt: number): void {
         if (targets.length === 0) return;
         e.attackAt = s.t;
         s.events.push({ type: 'enemyAttack', enemy: ei, targets, big: false });
-        for (const i of targets) hit(s, ei, i, a.mult, false, a.poison);
+        for (const i of targets) hit(s, ei, i, a.mult, false, a.poison, a.target === 'all');
       }
     });
   });
 }
 
 function hit(
-  s: FightState, ei: number, i: number, mult: number, big: boolean, poison?: { dps: number; dur: number },
+  s: FightState, ei: number, i: number, mult: number, big: boolean, poison?: { dps: number; dur: number }, aoe = false,
 ): void {
   const e = s.enemies[ei]!;
   const h = s.heroes[i]!;
-  const atk = e.atk * enrageMult(s);
-  const connected = damageHero(s, i, atk * mult, { enemy: ei, big, dodgeable: !big });
+  const enrage = enrageMult(s);
+  const connected = damageHero(s, i, e.atk * mult, { enemy: ei, big, dodgeable: !big, aoe, enrage });
   if (poison && connected && h.alive) {
-    h.poisonDps = Math.max(h.poisonT > 0 ? h.poisonDps : 0, atk * poison.dps);
+    const dps = Math.min(e.atk * poison.dps, h.stats.maxHp * T.poisonCapPerSec) * enrage;
+    h.poisonDps = Math.max(h.poisonT > 0 ? h.poisonDps : 0, dps);
     h.poisonT = Math.max(h.poisonT, poison.dur);
   }
 }
@@ -255,6 +256,18 @@ function checkFloorEnd(s: FightState): void {
     const cp = wipeCheckpoint(s.floor);
     s.stats.wipes++;
     s.events.push({ type: 'wipe', floor: s.floor, checkpoint: cp });
+    // Wiping again and again on one floor: farm just below it for a while instead, then push again.
+    if (s.floor === s.wallFloor) s.wallWipes++;
+    else {
+      s.wallFloor = s.floor;
+      s.wallWipes = 1;
+    }
+    if (s.autoAdvance && s.farmLeft === 0 && s.wallWipes >= T.retreatAfterWipes && s.floor > 1) {
+      s.farmFloor = Math.max(cp, s.floor - 1);
+      s.farmLeft = T.retreatFarmClears;
+      s.wallWipes = 0;
+      s.events.push({ type: 'retreat', wall: s.floor, farm: s.farmFloor, clears: s.farmLeft });
+    }
     s.phase = 'wipe';
     s.phaseT = T.wipeTime;
     s.enemies.forEach((e) => (e.windup = null));
@@ -264,7 +277,9 @@ function checkFloorEnd(s: FightState): void {
   const boss = isBossFloor(s.floor);
   s.stats.floorsCleared++;
   s.events.push({ type: 'floorClear', floor: s.floor, boss, flawless: s.downsThisFloor === 0 });
-  if (s.autoAdvance) s.floor++;
+  if (s.floor >= s.wallFloor) s.wallWipes = 0;
+  if (s.farmLeft > 0 && s.floor >= s.farmFloor) s.farmLeft--;
+  else if (s.autoAdvance) s.floor++;
   s.phase = 'walk';
   s.phaseT = T.walkTime;
   for (const h of s.heroes) {
@@ -291,3 +306,21 @@ function restartAfterWipe(s: FightState): void {
   spawnFloor(s);
 }
 
+
+export type Threat = 'easy' | 'tough' | 'deadly';
+
+/**
+ * How hard this floor hits the party: the biggest single blow any living enemy can deal (before the
+ * one-shot cap), against the life of the frailest living hero.
+ */
+export function floorThreat(s: FightState): { level: Threat; ratio: number } {
+  let worst = 0;
+  const frail = s.heroes.filter((h) => h.alive).reduce((a, h) => Math.min(a, h.stats.maxHp / h.stats.damageTaken), Infinity);
+  if (!Number.isFinite(frail)) return { level: 'deadly', ratio: 1 };
+  for (const e of s.enemies) {
+    if (!e.alive) continue;
+    for (const a of e.def.attacks) worst = Math.max(worst, e.atk * a.mult);
+  }
+  const ratio = worst / frail;
+  return { level: ratio < 0.35 ? 'easy' : ratio < 0.85 ? 'tough' : 'deadly', ratio };
+}

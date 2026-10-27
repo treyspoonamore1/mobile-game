@@ -63,6 +63,15 @@ export interface Loadout {
   miracle: number;
 }
 
+/**
+ * Hero life grows smoothly every level (no survival cliffs between milestones). It matches
+ * heroLevelMult at every milestone, so only damage carries the ×2 pop.
+ */
+export function heroLifeMult(level: number): number {
+  const perLevel = T.heroLevelGrowth * Math.pow(T.heroMilestoneMult, 1 / T.heroMilestoneEvery);
+  return Math.pow(perLevel, level - 1);
+}
+
 export function heroLevelMult(level: number): number {
   const milestones = Math.floor(level / T.heroMilestoneEvery);
   return Math.pow(T.heroLevelGrowth, level - 1) * Math.pow(T.heroMilestoneMult, milestones);
@@ -91,8 +100,9 @@ export function buildLoadout(p: Progress): Loadout {
   const lifeBonus = 1 + deed('life');
 
   const heroes = (HEROES as readonly HeroDef[]).map((def): HeroStats => {
-    const lm = heroLevelMult(p.heroLevels[def.id] ?? 1);
-    let hpMult = lm * might * lifeBonus;
+    const lvl = p.heroLevels[def.id] ?? 1;
+    const lm = heroLevelMult(lvl);
+    let hpMult = heroLifeMult(lvl) * might * lifeBonus;
     let atkMult = lm * might * dmgBonus;
     let damageTaken: number = def.damageTaken;
     let rage = def.rage ?? 0;

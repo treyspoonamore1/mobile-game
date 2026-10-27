@@ -20,6 +20,10 @@ export interface HitSource {
   /** Can be dodged (basic attacks). */
   dodgeable: boolean;
   poison?: boolean;
+  /** Hits everyone (an area blow). */
+  aoe?: boolean;
+  /** Enrage multiplier, applied after the one-shot cap. */
+  enrage?: number;
 }
 
 /** Returns true if the hit connected (not dodged or perfectly warded). */
@@ -34,6 +38,13 @@ export function damageHero(s: FightState, i: number, raw: number, src: HitSource
   let dmg = raw * h.stats.damageTaken;
   if (s.sanctuaryT > 0) dmg *= 1 - T.sanctuaryDr;
   if (s.anthemT > 0) dmg *= 0.8;
+  if (!src.poison) {
+    // Soft cap: past the cap, damage grows only as (raw / cap)^softness, so even an outclassed hero
+    // survives a few hits instead of being deleted, while deeper floors still hit harder.
+    const cap = h.stats.maxHp * (src.big ? (src.aoe ? T.aoeHitCap : T.heavyHitCap) : T.basicHitCap);
+    if (dmg > cap) dmg = cap * Math.pow(dmg / cap, T.hitCapSoftness);
+  }
+  dmg *= src.enrage ?? 1;
 
   // Perfect Ward: a player Ward placed just before a telegraphed hit blocks it entirely.
   if (src.big && h.shield > 0 && s.t - h.playerWardAt <= s.loadout.perfectWindow) {

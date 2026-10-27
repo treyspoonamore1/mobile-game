@@ -50,6 +50,9 @@ export class Coach {
         if (this.game.hint.value?.id === 'revive') this.game.hint.value = null;
       }
       if (e.type === 'wipe') this.game.save.tutorial.wiped = true;
+      if (e.type === 'retreat') {
+        this.game.toast(`Floor ${e.wall} is too tough for now. Level up in Party, or learn talents, to break through.`, 'info');
+      }
     }
   }
 

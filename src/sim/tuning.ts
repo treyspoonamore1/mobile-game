@@ -48,6 +48,20 @@ export const T = {
   enrageAfter: 25,
   enrageAfterBoss: 45,
   enrageDoubling: 4,
+  /**
+   * No surprise one-shots: a single hit takes at most this share of the target's max life (before enrage).
+   * Basic hits are untelegraphed; area blows hit everyone; a heavy blow from full leaves a sliver.
+   */
+  basicHitCap: 0.3,
+  aoeHitCap: 0.5,
+  heavyHitCap: 0.85,
+  /** Past the cap, damage grows as (raw / cap)^hitCapSoftness. */
+  hitCapSoftness: 0.35,
+  /** Poison damage per second is capped at this share of max life. */
+  poisonCapPerSec: 0.06,
+  /** After this many wipes in a row on one floor, the party farms below it for a while, then pushes again. */
+  retreatAfterWipes: 2,
+  retreatFarmClears: 5,
 
   // Floor flow
   walkTime: 1.4,
