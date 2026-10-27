@@ -58,10 +58,17 @@ function silhouette(src: HTMLCanvasElement): HTMLCanvasElement {
   return c;
 }
 
+function flashOver(g: CanvasRenderingContext2D, img: HTMLCanvasElement, x: number, y: number, alpha = 1): void {
+  const a = g.globalAlpha;
+  g.globalAlpha = a * alpha;
+  g.drawImage(silhouette(img), x, y);
+  g.globalAlpha = a;
+}
+
 /** Draw a sprite anchored at its feet (bottom centre). */
 export function drawSprite(
   g: CanvasRenderingContext2D, id: string, anim: Anim, frame: number, x: number, y: number,
-  opts: { depth?: number; flash?: boolean; alpha?: number; flip?: boolean } = {},
+  opts: { depth?: number; flash?: boolean; flashAlpha?: number; alpha?: number; flip?: boolean } = {},
 ): void {
   const frames = getFrames(id, anim, opts.depth ?? 0);
   if (frames.length === 0) return;
@@ -74,10 +81,10 @@ export function drawSprite(
     g.translate(dx + img.width, dy);
     g.scale(-1, 1);
     g.drawImage(img, 0, 0);
-    if (opts.flash) g.drawImage(silhouette(img), 0, 0);
+    if (opts.flash) flashOver(g, img, 0, 0, opts.flashAlpha);
   } else {
     g.drawImage(img, dx, dy);
-    if (opts.flash) g.drawImage(silhouette(img), dx, dy);
+    if (opts.flash) flashOver(g, img, dx, dy, opts.flashAlpha);
   }
   g.restore();
 }
@@ -262,7 +269,8 @@ function drawEnemy(g: CanvasRenderingContext2D, L: Layout, s: FightState, i: num
   const blink = !e.alive && Math.floor(deadFor * 20) % 2 === 0;
   if (!blink) {
     drawSprite(g, e.def.id, anim, frame, x, y, {
-      depth, flash: s.t - e.hitAt < 0.07 || !e.alive, alpha: e.alive ? 1 : 1 - deadFor / 0.5,
+      // Enemies are hit several times a second: a soft tint instead of a full white strobe.
+      depth, flash: s.t - e.hitAt < 0.06 || !e.alive, flashAlpha: e.alive ? 0.45 : 1, alpha: e.alive ? 1 : 1 - deadFor / 0.5,
     });
   }
   if (e.alive && !e.def.boss) {

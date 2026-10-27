@@ -7,10 +7,10 @@ const out = process.argv[2] ?? 'shots';
 const url = process.argv[3] ?? 'http://localhost:5173/';
 mkdirSync(out, { recursive: true });
 const cases = [
-  { name: 'judgement', floor: 10, lvl: 22, when: 'judgement' },
-  { name: 'plague', floor: 20, lvl: 34, when: 'plague' },
-  { name: 'frostbite', floor: 30, lvl: 46, when: 'frost' },
-  { name: 'siphon', floor: 40, lvl: 58, when: 'siphon' },
+  { name: 'judgement', floor: 10, lvl: 40, when: 'judgement' },
+  { name: 'plague', floor: 20, lvl: 70, when: 'plague' },
+  { name: 'frostbite', floor: 30, lvl: 100, when: 'frost' },
+  { name: 'siphon', floor: 40, lvl: 130, when: 'siphon' },
 ];
 const browser = await chromium.launch();
 const errors = [];
@@ -28,12 +28,17 @@ for (const c of cases) {
   let got = false;
   for (let i = 0; i < 900 && !got; i++) {
     got = await page.evaluate((when) => {
-      const f = window.lifeline.fight();
+      if (!window.lifeline) return false;
+      const { game, fight } = window.lifeline;
+      const f = fight();
+      // Keep the shot on the boss: no pausing modals, and a boss that lives long enough to use its mechanic.
+      if (game.modal.value) game.modal.value = null;
+      for (const e of f.enemies) if (e.def.boss && !e.boosted) { e.boosted = true; e.maxHp *= 40; e.hp = e.maxHp; }
       if (when === 'siphon') return f.siphonT > 0 || f.enemies.some((e) => e.windup?.attack.mech === 'siphon');
       if (when === 'plague') return f.heroes.some((h) => h.plagueT > 0);
       if (when === 'frost') return f.heroes.some((h) => h.frostT > 0);
       return f.enemies.some((e) => e.windup?.attack.mech === 'judgement' && e.windup.t > 1);
-    }, c.when);
+    }, c.when).catch(() => false);
     if (!got) await page.waitForTimeout(50);
   }
   await page.waitForTimeout(c.when === 'siphon' ? 900 : 300);

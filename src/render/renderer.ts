@@ -21,6 +21,10 @@ export class Renderer {
   showNumbers = true;
   /** Frame the tutorial is pointing at. */
   hintHero: number | null = null;
+  /** Small hits waiting to be shown as one number per hero. */
+  private pendingHits = [0, 1, 2, 3].map(() => ({ dmg: 0, absorbed: 0, poison: true }));
+  private lastHitFx = [-9, -9, -9, -9];
+  private hitFlushT = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -86,10 +90,21 @@ export class Renderer {
         }
         case 'heroHit': {
           const p = heroPos(L, e.hero);
-          if (e.amount >= 1 && this.showNumbers) fx.text(`-${short(e.amount)}`, p.x + 4, p.y - 14, e.poison ? '#8be04e' : '#ff6b6b', e.big ? 1.3 : 1);
-          if (e.absorbed >= 1 && this.showNumbers) fx.text(`(${short(e.absorbed)})`, p.x - 6, p.y - 20, '#8fd3ff', 0.9);
-          if (!e.poison) fx.sprite('fx_hit', 'idle', p.x, p.y - 4, 0.05, 3);
-          if (e.big) fx.shake = Math.max(fx.shake, 1.5);
+          if (e.big) {
+            if (e.amount >= 1 && this.showNumbers) fx.text(`-${short(e.amount)}`, p.x + 4, p.y - 14, '#ff6b6b', 1.3);
+            if (e.absorbed >= 1 && this.showNumbers) fx.text(`(${short(e.absorbed)})`, p.x - 6, p.y - 20, '#8fd3ff', 0.9);
+            fx.shake = Math.max(fx.shake, 1.5);
+          } else {
+            // Enemies swing several times a second: sum small hits per hero and show them a few times a second.
+            const b = this.pendingHits[e.hero]!;
+            b.dmg += e.amount;
+            b.absorbed += e.absorbed;
+            b.poison = b.poison && !!e.poison;
+          }
+          if (!e.poison && now - this.lastHitFx[e.hero]! > 0.12) {
+            this.lastHitFx[e.hero] = now;
+            fx.sprite('fx_hit', 'idle', p.x, p.y - 4, 0.05, 3);
+          }
           break;
         }
         case 'dodge': {
@@ -236,6 +251,11 @@ export class Renderer {
     const g = this.g;
     this.scene.now += dt;
     this.fx.update(dt);
+    this.hitFlushT += dt;
+    if (this.hitFlushT >= 0.3) {
+      this.hitFlushT = 0;
+      this.flushHits(s);
+    }
     updateFrameAnim(this.anim, s, dt);
 
     // Scene, at art resolution, then scaled up.
@@ -309,6 +329,22 @@ export class Renderer {
     for (let k = 0; k < 7; k++) g.fillRect(ax + k * 2, ay - k, 2, k * 2 + 1);
     g.fillRect(ax + 14, ay - 3, 6, 7);
     g.restore();
+  }
+
+  private flushHits(s: FightState): void {
+    this.pendingHits.forEach((b, i) => {
+      if (b.dmg >= 1 && this.showNumbers && s.heroes[i]) {
+        const p = heroPos(this.layout, i);
+        this.fx.text(`-${short(b.dmg)}`, p.x + 4, p.y - 14, b.poison ? '#8be04e' : '#ff6b6b');
+      }
+      if (b.absorbed >= 1 && this.showNumbers) {
+        const p = heroPos(this.layout, i);
+        this.fx.text(`(${short(b.absorbed)})`, p.x - 6, p.y - 20, '#8fd3ff', 0.9);
+      }
+      b.dmg = 0;
+      b.absorbed = 0;
+      b.poison = true;
+    });
   }
 
   private drawTexts(g: CanvasRenderingContext2D, k: number): void {
