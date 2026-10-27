@@ -6,6 +6,30 @@ export function soundEvents(events: readonly SimEvent[]): void {
   let chained = false;
   for (const e of events) {
     switch (e.type) {
+      case 'judged':
+        playSfx(e.passed ? 'perfect' : 'hit_hero_big', e.passed ? { vol: 0.5, pitch: 0.8 } : undefined);
+        if (!e.passed) haptic('hit');
+        break;
+      case 'plague':
+      case 'frostbite':
+        playSfx('telegraph', { pitch: 0.8 });
+        break;
+      case 'plagueBurst':
+        playSfx('poison');
+        haptic('hit');
+        break;
+      case 'cure':
+      case 'thaw':
+        playSfx('cleanse');
+        break;
+      case 'siphon':
+        playSfx('oom', { pitch: 0.7 });
+        haptic('boss');
+        break;
+      case 'siphoned':
+        playSfx('oom');
+        haptic('hit');
+        break;
       case 'stun':
         playSfx('crit', { pitch: 0.7, vol: 0.6 });
         break;

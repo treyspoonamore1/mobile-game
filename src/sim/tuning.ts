@@ -82,6 +82,11 @@ export const T = {
   manaMax: 100,
   manaRegen: 7,
   mendPct: 0.22,
+  /** Most a fully upgraded Mend heals (share of max life), and most a fully upgraded Ward absorbs. */
+  mendCap: 0.7,
+  wardCap: 1.2,
+  /** Share of the Cleric's overhealing that becomes a Ward. */
+  clericOverhealShield: 0.333,
   mendCost: 10,
   wardPct: 0.4,
   wardCost: 14,
@@ -152,4 +157,33 @@ export const T = {
   /** Devotion from a Pilgrimage at pilgrimageFloor, and its growth per floor deeper. */
   devotionBase: 6,
   devotionGrowth: 1.04,
+
+  // Gear
+  /** A Worn item's main stat at item level 0; rarity multiplies it, depth grows it. */
+  gearMainBase: 0.08,
+  /** Main stat and scaling affixes grow by this per item level (floor). */
+  gearIlvlScale: 0.03,
+  /** Chance a normal floor clear drops an item; bosses always drop one of at least gearBossMinRarity. */
+  gearDropChance: 0.3,
+  gearBossMinRarity: 2,
+  /** Rarity odds shift toward rarer items by this per floor (at 1.0 each step up is twice as likely). */
+  gearRarityPerFloor: 0.02,
+  inventoryCap: 40,
+  /** Salvaging pays gold worth this many average kills on the item's floor, times (rarity + 1). */
+  salvageKills: 2,
+
+  // Boss mechanics
+  /** Judgement: below this share of life when the mark ends, the hero takes judgementDmg of max life. */
+  judgementLine: 0.9,
+  judgementDmg: 0.7,
+  /** Plague: seconds to cure, burst damage (share of max life), then it spreads to the others. */
+  plagueTime: 5,
+  plagueDmg: 0.25,
+  /** Frostbite: two heroes lose frostDps of max life per second for up to frostTime s, until healed to frostThaw. */
+  frostTime: 8,
+  frostDps: 0.06,
+  frostThaw: 0.95,
+  /** Siphon: for siphonTime s, each spell you cast drains siphonDrain of your max mana. */
+  siphonTime: 3,
+  siphonDrain: 0.3,
 } as const;

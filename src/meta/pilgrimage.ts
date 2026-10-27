@@ -36,6 +36,8 @@ export function pilgrimage(save: Save, order: OrderId): number {
   p.heroLevels = { tomas: 1, brann: 1, ilse: 1, wren: 1 };
   p.upgrades = {};
   p.relics = [];
+  p.equipped = {};
+  save.inventory = [];
   p.order = orderUnlocked(save, order) ? order : 'cleric';
   const start = startFloor(save);
   p.maxFloor = start;

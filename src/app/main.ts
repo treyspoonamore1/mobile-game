@@ -9,6 +9,8 @@ import { applyEvents, newFight, pickRelic as metaPickRelic, refreshLoadout, type
 import { buyDevotionUpgrade, buyGoldUpgrade, buyHero } from '../meta/shop.ts';
 import { claimDeed } from '../meta/deeds.ts';
 import { learnTalent, resetTalents } from '../meta/healer.ts';
+import { autoEquip, equip, merge, mergeAll, salvageItem, unequip } from '../meta/gear.ts';
+import { itemName, RARITIES } from '../sim/data/gear.ts';
 import { deedDef } from '../sim/data/deeds.ts';
 import { Renderer } from '../render/renderer.ts';
 import { isBossFloor, regionOf } from '../sim/data/regions.ts';
@@ -122,6 +124,35 @@ const game: Game = {
     game.toast(`${deedDef(id).name} claimed! +${shortGold(gold)} gold`, 'gold');
     bump();
   },
+  equip(hero, uid) {
+    afterGear(equip(save, hero, uid));
+  },
+  unequip(hero, slot) {
+    afterGear(unequip(save, hero, slot));
+  },
+  salvage(uid) {
+    const g = salvageItem(save, uid);
+    if (g !== null) playSfx('gold');
+    afterGear(g !== null);
+  },
+  merge(uids) {
+    const out = merge(save, uids);
+    if (out) game.toast(`Merged into ${itemName(out)}!`, 'gold');
+    afterGear(!!out, 'relic');
+  },
+  mergeAll() {
+    const made = mergeAll(save);
+    if (made.length > 0) game.toast(`Merged ${made.length} item${made.length > 1 ? 's' : ''}!`, 'gold');
+    afterGear(made.length > 0, 'relic');
+  },
+  autoEquip() {
+    afterGear(autoEquip(save) > 0);
+  },
+  setAutoSalvage(below) {
+    save.autoSalvageBelow = below;
+    game.uiTap();
+    bump();
+  },
   setPrayer(slot, prayer) {
     save.progress.acolytes[slot] = prayer;
     refreshLoadout(save, fight);
@@ -200,6 +231,15 @@ function shortGold(n: number): string {
   return n >= 1e6 ? n.toExponential(1) : n >= 1e3 ? `${(n / 1e3).toFixed(1)}K` : Math.round(n).toString();
 }
 
+function afterGear(ok: boolean, sfx: 'buy' | 'relic' = 'buy'): void {
+  if (ok) {
+    refreshLoadout(save, fight);
+    playSfx(sfx);
+    haptic('buy');
+  } else game.uiTap(false);
+  bump();
+}
+
 function bump(): void {
   game.version.value++;
 }
@@ -271,6 +311,15 @@ function onNotes(notes: MetaNote[]): void {
           game.modal.value = game.modal.value ?? { kind: 'unlock', id: 'talents' };
         }
         break;
+      case 'itemDrop': {
+        const r = RARITIES[n.item.rarity];
+        if (!save.tutorial.gear) {
+          save.tutorial.gear = true;
+          game.modal.value = game.modal.value ?? { kind: 'unlock', id: 'gear' };
+        } else if (n.item.rarity >= 2 || n.boss) game.toast(`${r.name} drop: ${itemName(n.item)}`, n.item.rarity >= 3 ? 'gold' : 'good');
+        if (n.item.rarity >= 3) playSfx('relic');
+        break;
+      }
       case 'deedReady':
         if (!save.tutorial.deeds) {
           save.tutorial.deeds = true;

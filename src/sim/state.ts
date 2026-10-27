@@ -25,6 +25,11 @@ export interface HeroState {
   /** Sim time of the last telegraphed hit taken, and its damage. */
   bigHitAt: number;
   bigHitDmg: number;
+  /** Boss mechanics on this hero: Plague (and whether it will spread), Frostbite. */
+  plagueT: number;
+  plagueSpreads: boolean;
+  frostT: number;
+  frostTick: number;
   /** Lifebloom: healing per second and seconds left. */
   bloomRate: number;
   bloomT: number;
@@ -106,6 +111,8 @@ export interface FightState {
   histTimer: number;
   /** Heroes that fell on this floor (for flawless clears). */
   downsThisFloor: number;
+  /** Siphon: seconds left in which every spell drains mana. */
+  siphonT: number;
   /** Auto-retreat: the floor the party keeps wiping on, how many times, and the farming that follows. */
   wallFloor: number;
   wallWipes: number;
@@ -140,7 +147,15 @@ export type SimEvent =
   | { type: 'floorStart'; floor: number; boss: boolean }
   | { type: 'floorClear'; floor: number; boss: boolean; flawless: boolean }
   | { type: 'wipe'; floor: number; checkpoint: number }
-  | { type: 'retreat'; wall: number; farm: number; clears: number };
+  | { type: 'retreat'; wall: number; farm: number; clears: number }
+  | { type: 'judged'; hero: number; passed: boolean }
+  | { type: 'plague'; hero: number }
+  | { type: 'plagueBurst'; hero: number }
+  | { type: 'cure'; hero: number }
+  | { type: 'frostbite'; hero: number }
+  | { type: 'thaw'; hero: number }
+  | { type: 'siphon' }
+  | { type: 'siphoned'; amount: number };
 
 export type Action =
   | { kind: 'mend'; hero: number }

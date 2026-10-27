@@ -141,7 +141,12 @@ export function healHero(
 ): void {
   const h = s.heroes[i]!;
   if (!h.alive) return;
-  const eff = amount * s.loadout.healMult;
+  if (by === 'player' && h.plagueT > 0) {
+    // Your healing cures Plague.
+    h.plagueT = 0;
+    s.events.push({ type: 'cure', hero: i });
+  }
+  const eff = amount * s.loadout.healMult * h.stats.healTaken;
   const actual = Math.min(h.stats.maxHp - h.hp, eff);
   const over = eff - actual;
   h.hp += actual;
@@ -179,9 +184,10 @@ export function shieldHero(s: FightState, i: number, amount: number, by: 'player
 
 export function cleanseHero(s: FightState, i: number): boolean {
   const h = s.heroes[i]!;
-  if (!h.alive || h.poisonT <= 0) return false;
+  if (!h.alive || (h.poisonT <= 0 && h.plagueT <= 0)) return false;
   h.poisonT = 0;
   h.poisonDps = 0;
+  h.plagueT = 0;
   s.events.push({ type: 'cleanse', hero: i });
   return true;
 }

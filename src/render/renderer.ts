@@ -152,6 +152,49 @@ export class Renderer {
           fx.burst(p.x, p.y - 10, '#e2b8ff', 16, 50, 0.7);
           break;
         }
+        case 'judged': {
+          const p = heroPos(L, e.hero);
+          fx.text(e.passed ? 'JUDGED · SAFE' : 'JUDGED!', p.x, p.y - 30, e.passed ? '#7ee07e' : '#ffe14a', 1.1, true);
+          if (e.passed) fx.burst(p.x, p.y - 8, '#ffe14a', 10, 40, 0.6);
+          break;
+        }
+        case 'plague': {
+          const p = heroPos(L, e.hero);
+          fx.text('PLAGUE', p.x, p.y - 30, '#8be04e', 1, true);
+          break;
+        }
+        case 'plagueBurst': {
+          const p = heroPos(L, e.hero);
+          fx.burst(p.x, p.y - 8, '#8be04e', 18, 60, 0.8);
+          fx.shake = Math.max(fx.shake, 1);
+          break;
+        }
+        case 'cure': {
+          const p = heroPos(L, e.hero);
+          fx.text('CURED!', p.x, p.y - 30, '#c8ffb0', 1.1, true);
+          fx.burst(p.x, p.y - 8, '#c8ffb0', 12, 45, 0.6);
+          break;
+        }
+        case 'frostbite': {
+          const p = heroPos(L, e.hero);
+          fx.text('FROSTBITE', p.x, p.y - 30, '#9fdcff', 1, true);
+          break;
+        }
+        case 'thaw': {
+          const p = heroPos(L, e.hero);
+          fx.text('THAWED', p.x, p.y - 28, '#bfe8ff', 1, true);
+          fx.burst(p.x, p.y - 4, '#bfe8ff', 10, 35, 0.5);
+          break;
+        }
+        case 'siphon':
+          fx.flash = 0.35;
+          fx.flashColor = '#c48cff';
+          break;
+        case 'siphoned': {
+          const p = healerPos(L);
+          fx.text(`-${Math.round(e.amount)} MANA`, p.x + 8, p.y - 24, '#c48cff', 1.2, true);
+          break;
+        }
         case 'stun': {
           const p = enemyPos(L, s, e.enemy);
           fx.text('STUNNED', p.x, p.y - 30, '#ffe14a', 0.95, true);

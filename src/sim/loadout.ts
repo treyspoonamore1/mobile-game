@@ -5,6 +5,7 @@ import type { RelicId } from './data/relics.ts';
 import type { DevotionUpgradeId, GoldUpgradeId } from './data/upgrades.ts';
 import { deedBonus, type DeedsClaimed } from './data/deeds.ts';
 import { talentValue, type Talents } from './data/talents.ts';
+import { gearStat, type Item, type Slot } from './data/gear.ts';
 import { T } from './tuning.ts';
 
 /** The parts of a save that decide how strong the party is. Plain data. */
@@ -21,6 +22,8 @@ export interface Progress {
   talents: Talents;
   /** Deed tiers claimed (permanent bonuses). */
   deeds: DeedsClaimed;
+  /** Gear worn by each hero (reset by a Pilgrimage). */
+  equipped: Partial<Record<HeroId, Partial<Record<Slot, Item>>>>;
 }
 
 export interface HeroStats {
@@ -30,6 +33,10 @@ export interface HeroStats {
   interval: number;
   damageTaken: number;
   rage: number;
+  /** Crit chance (base plus gear). */
+  crit: number;
+  /** Multiplier on healing this hero receives (gear). */
+  healTaken: number;
 }
 
 export interface Loadout {
@@ -104,7 +111,11 @@ export function buildLoadout(p: Progress): Loadout {
     const lm = heroLevelMult(lvl);
     let hpMult = heroLifeMult(lvl) * might * lifeBonus;
     let atkMult = lm * might * dmgBonus;
-    let damageTaken: number = def.damageTaken;
+    const gear = Object.values(p.equipped?.[def.id] ?? {});
+    const g = (k: Parameters<typeof gearStat>[1]) => gearStat(gear, k);
+    hpMult *= 1 + g('vigor');
+    atkMult *= 1 + g('might');
+    let damageTaken: number = def.damageTaken * (1 - g('guard'));
     let rage = def.rage ?? 0;
     if (def.id === 'ilse' && relics.has('star_gem')) {
       hpMult *= 1.3;
@@ -112,7 +123,10 @@ export function buildLoadout(p: Progress): Loadout {
     }
     if (def.id === 'tomas' && relics.has('iron_vow')) damageTaken *= 0.75;
     if (def.id === 'brann' && relics.has('blood_totem')) rage *= 2;
-    return { def, maxHp: def.hp * hpMult, atk: def.atk * atkMult, interval: def.interval, damageTaken, rage };
+    return {
+      def, maxHp: def.hp * hpMult, atk: def.atk * atkMult, interval: def.interval / (1 + g('haste')), damageTaken, rage,
+      crit: (def.crit ?? 0) + g('precision'), healTaken: 1 + g('blessed'),
+    };
   });
 
   const grace = (1 + T.gracePerLevel * d('grace')) * (1 + deed('heal'));
@@ -125,9 +139,9 @@ export function buildLoadout(p: Progress): Loadout {
     manaRegen:
       T.manaRegen * soft(1, T.manaRegenCap, u('mana_regen')) * (1 + T.spiritPerLevel * d('spirit')) *
       (relics.has('candle') ? 1.4 : 1) * (1 + t('deep_breath')) * (1 + deed('mana')),
-    mendPct: soft(T.mendPct, 0.7, u('mend_power')) * (p.order === 'chrono' ? 0.85 : 1),
+    mendPct: soft(T.mendPct, T.mendCap, u('mend_power')) * (p.order === 'chrono' ? 0.85 : 1),
     mendCost,
-    wardPct: soft(T.wardPct, 1.2, u('ward_power')) * (relics.has('warding_orb') ? 1.5 : 1) * (1 + t('thick_ward')),
+    wardPct: soft(T.wardPct, T.wardCap, u('ward_power')) * (relics.has('warding_orb') ? 1.5 : 1) * (1 + t('thick_ward')),
     wardCost: T.wardCost,
     chainEff: soft(T.chainEff, 1, u('chain_power')),
     healMult: grace,
@@ -139,7 +153,7 @@ export function buildLoadout(p: Progress): Loadout {
       (T.acolyteInterval * Math.pow(T.acolyteSpeedPerLevel, u('aco_speed'))) / (relics.has('rosary') ? 1.3 : 1) / (1 + t('swift_prayers')),
     acolytePotency: T.acolytePotency * soft(1, T.acolytePowerCap, u('aco_power')) * (1 + t('shepherd')) * (1 + deed('acolyte')),
     relics,
-    overhealShield: (p.order === 'cleric' ? 1 / 3 : 0) + (relics.has('sunstone') ? 0.5 : 0),
+    overhealShield: (p.order === 'cleric' ? T.clericOverhealShield : 0) + (relics.has('sunstone') ? 0.5 : 0),
     wardDur: T.wardDur + t('lingering'),
     secondTouch: t('second_touch'),
     triage: t('triage'),

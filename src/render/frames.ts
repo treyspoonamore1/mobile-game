@@ -2,6 +2,7 @@ import { orderDef } from '../sim/data/orders.ts';
 import { BEAT_PERIOD, BEAT_TOLERANCE, beatOffset } from '../sim/spells.ts';
 import { incomingOn, type FightState } from '../sim/state.ts';
 import { T } from '../sim/tuning.ts';
+import { isMech } from '../sim/data/mechanics.ts';
 import { getFrames, getIcon } from './art/index.ts';
 import type { Layout } from './layout.ts';
 import { drawText, short } from './text.ts';
@@ -83,7 +84,7 @@ export function drawFrames(g: CanvasRenderingContext2D, L: Layout, s: FightState
     if (inc) border = perfectNow ? '#ffe14a' : Math.floor(now * 8) % 2 ? '#ff4a4a' : '#7a1a1a';
     else if (inChain) border = '#7ee07e';
     else if (onBeat) border = '#c48cff';
-    let body = h.alive ? '#262b4d' : '#1a1d33';
+    let body = !h.alive ? '#1a1d33' : h.plagueT > 0 ? '#23402a' : h.frostT > 0 ? '#1f3550' : '#262b4d';
     if (low) body = Math.floor(now * 4) % 2 ? '#4a2333' : '#3a2140';
     if (down !== undefined || inChain) body = h.alive ? '#323a66' : '#262840';
     panel(g, x, y, w, hh, body, border);
@@ -115,13 +116,8 @@ export function drawFrames(g: CanvasRenderingContext2D, L: Layout, s: FightState
     // Name row.
     const nameY = y + hh * 0.27;
     drawText(g, h.stats.def.name, bx, nameY, { size: Math.round(hh * 0.25), color: h.alive ? '#f4ecd6' : '#7d7f99', outline: '#0b0d1a', outlineW: 3 });
-    if (h.alive && h.stats.rage > 0) {
-      const bonus = Math.round(h.stats.rage * (1 - h.hp / h.stats.maxHp) * 100);
-      if (bonus >= 10) drawText(g, `RAGE +${bonus}%`, bx + bw, nameY, { size: Math.round(hh * 0.19), color: '#ff8a5a', align: 'right', outline: '#0b0d1a', outlineW: 3 });
-    }
-    if (h.alive && h.poisonT > 0) {
-      drawText(g, 'POISON', bx + bw - (h.stats.rage > 0 ? 80 : 0), nameY, { size: Math.round(hh * 0.19), color: '#8be04e', align: 'right', outline: '#0b0d1a', outlineW: 3 });
-    }
+    const status = h.alive ? statusOf(s, i, now) : null;
+    if (status) drawText(g, status.text, bx + bw, nameY, { size: Math.round(hh * 0.19), color: status.color, align: 'right', outline: '#0b0d1a', outlineW: 3 });
 
     // Life bar.
     const barY = y + hh * 0.48;
@@ -133,7 +129,7 @@ export function drawFrames(g: CanvasRenderingContext2D, L: Layout, s: FightState
       rect(g, bx, barY, ghostW, barH, '#ffd1d1');
       const shownW = Math.round(bw * a.shown[i]!);
       const f = h.hp / h.stats.maxHp;
-      rect(g, bx, barY, shownW, barH, h.poisonT > 0 ? '#7cc24a' : lifeColor(f));
+      rect(g, bx, barY, shownW, barH, h.frostT > 0 ? '#7fc8ff' : h.plagueT > 0 || h.poisonT > 0 ? '#7cc24a' : lifeColor(f));
       rect(g, bx, barY, shownW, 3, 'rgba(255,255,255,0.3)');
       rect(g, bx, barY + barH - 3, shownW, 3, 'rgba(0,0,0,0.2)');
       if (h.shield > 0) {
@@ -151,6 +147,11 @@ export function drawFrames(g: CanvasRenderingContext2D, L: Layout, s: FightState
         g.globalAlpha = a.flash[i]!;
         rect(g, bx, barY, bw, barH, '#c8ffc8');
         g.restore();
+      }
+      if (judgedSoon(s, i)) {
+        // Judgement: the line they must be above when the mark ends.
+        const lx = bx + Math.round(bw * T.judgementLine);
+        rect(g, lx - 1, barY - 4, 3, barH + 8, Math.floor(now * 8) % 2 ? '#ffe14a' : '#fff6c0');
       }
       const label = h.shield > 0 ? `${short(h.hp)} +${short(h.shield)}` : `${short(h.hp)} / ${short(h.stats.maxHp)}`;
       drawText(g, label, bx + bw / 2, barY + barH / 2 + 1, { size: Math.round(barH * 0.62), color: '#ffffff', align: 'center', outline: '#0b0d1a', outlineW: 3 });
@@ -209,6 +210,7 @@ export function drawFrames(g: CanvasRenderingContext2D, L: Layout, s: FightState
     g.restore();
   }
 
+  drawSiphon(g, L, s, now);
   drawMana(g, L, s, a, now);
   drawSanctuary(g, L, s, input, now);
   if (bard) drawBeat(g, L, s);
@@ -274,5 +276,57 @@ function drawBeat(g: CanvasRenderingContext2D, L: Layout, s: FightState): void {
   g.save();
   g.globalAlpha = 0.4 + pulse * 0.6;
   rect(g, r.x + r.w / 2 - 20 - pulse * 10, r.y - 5, 40 + pulse * 20, 3, '#c48cff');
+  g.restore();
+}
+
+/** Is this hero marked by a Judgement that is winding up? */
+function judgedSoon(s: FightState, hero: number): boolean {
+  return s.enemies.some((e) => e.alive && e.windup && isMech(e.windup.attack) && e.windup.attack.mech === 'judgement' && e.windup.targets.includes(hero));
+}
+
+/** The most urgent status to print on a hero's frame. */
+function statusOf(s: FightState, i: number, now: number): { text: string; color: string } | null {
+  const h = s.heroes[i]!;
+  if (h.plagueT > 0) return { text: `PLAGUE ${h.plagueT.toFixed(1)}s · MEND!`, color: Math.floor(now * 6) % 2 ? '#8be04e' : '#d8ffb0' };
+  if (h.frostT > 0) return { text: 'FROSTBITE · HEAL TO FULL', color: '#9fdcff' };
+  if (judgedSoon(s, i)) {
+    const ok = h.hp / h.stats.maxHp >= T.judgementLine;
+    return { text: ok ? 'JUDGEMENT · SAFE' : 'JUDGEMENT · ABOVE 90%!', color: ok ? '#7ee07e' : '#ffe14a' };
+  }
+  if (h.poisonT > 0) return { text: 'POISON', color: '#8be04e' };
+  if (h.stats.rage > 0) {
+    const bonus = Math.round(h.stats.rage * (1 - h.hp / h.stats.maxHp) * 100);
+    if (bonus >= 10) return { text: `RAGE +${bonus}%`, color: '#ff8a5a' };
+  }
+  return null;
+}
+
+/** Siphon: a warning while it winds up, then a "don't cast" veil over the frames while it's open. */
+function drawSiphon(g: CanvasRenderingContext2D, L: Layout, s: FightState, now: number): void {
+  let windupLeft = -1;
+  for (const e of s.enemies) {
+    const w = e.windup;
+    if (e.alive && w && isMech(w.attack) && w.attack.mech === 'siphon') windupLeft = w.total - w.t;
+  }
+  if (s.siphonT <= 0 && windupLeft < 0) return;
+  const top = L.frames[0]!;
+  const bottom = L.frames[L.frames.length - 1]!;
+  const y0 = top.y - 4;
+  const h = bottom.y + bottom.h - top.y + 8;
+  g.save();
+  if (s.siphonT > 0) {
+    g.globalAlpha = 0.55 + 0.1 * Math.sin(now * 8);
+    g.fillStyle = '#2a1640';
+    g.fillRect(0, y0, L.w, h);
+    g.globalAlpha = 1;
+    drawText(g, "SIPHON · DON'T CAST", L.w / 2, y0 + h / 2 - 14, { size: 26, color: '#e2b8ff', align: 'center', outline: '#0b0d1a', outlineW: 6, weight: 700 });
+    drawText(g, `${s.siphonT.toFixed(1)}s`, L.w / 2, y0 + h / 2 + 18, { size: 20, color: '#ffffff', align: 'center', outline: '#0b0d1a', outlineW: 5 });
+  } else {
+    g.globalAlpha = 0.18 + 0.12 * Math.sin(now * 12);
+    g.fillStyle = '#c48cff';
+    g.fillRect(0, y0, L.w, h);
+    g.globalAlpha = 1;
+    drawText(g, `SIPHON IN ${windupLeft.toFixed(1)}s · CAST NOW, THEN WAIT`, L.w / 2, y0 + 14, { size: 14, color: '#e2b8ff', align: 'center', outline: '#0b0d1a', outlineW: 4, weight: 700 });
+  }
   g.restore();
 }

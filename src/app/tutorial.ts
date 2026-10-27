@@ -1,5 +1,6 @@
 import { aliveHeroes } from '../sim/combat.ts';
 import { orderDef } from '../sim/data/orders.ts';
+import { isMech, MECH_INFO, type MechKind } from '../sim/data/mechanics.ts';
 import { heroCost } from '../meta/shop.ts';
 import { incomingOn, type FightState, type SimEvent } from '../sim/state.ts';
 import { T } from '../sim/tuning.ts';
@@ -10,6 +11,8 @@ export class Coach {
   private mends = 0;
   private holdSeen = 0;
   private telegraphSlow = 0;
+  /** A boss mechanic being taught right now. */
+  private mechHint: { kind: MechKind; until: number; targets: number[] } | null = null;
 
   constructor(private game: Game) {}
 
@@ -50,6 +53,13 @@ export class Coach {
         if (this.game.hint.value?.id === 'revive') this.game.hint.value = null;
       }
       if (e.type === 'wipe') this.game.save.tutorial.wiped = true;
+      if (e.type === 'telegraph') {
+        const w = s.enemies[e.enemy]?.windup;
+        if (w && isMech(w.attack) && !this.done(`mech_${w.attack.mech}`)) {
+          this.game.save.tutorial[`mech_${w.attack.mech}`] = true;
+          this.mechHint = { kind: w.attack.mech, until: s.t + w.total + 0.5, targets: w.targets };
+        }
+      }
       if (e.type === 'retreat') {
         this.game.toast(`Floor ${e.wall} is too tough for now. Level up in Party, or learn talents, to break through.`, 'info');
       }
@@ -73,6 +83,14 @@ export class Coach {
         scale = 0.3;
       } else {
         this.telegraphSlow = 0;
+      }
+    }
+    if (!hint && this.mechHint) {
+      if (s.t > this.mechHint.until || s.phase !== 'fight') this.mechHint = null;
+      else {
+        const info = MECH_INFO[this.mechHint.kind];
+        hint = { id: `mech_${this.mechHint.kind}`, text: `${info.name}! ${info.hint}`, hero: this.mechHint.targets[0] };
+        scale = 0.45;
       }
     }
     if (!hint && !this.done('tap') && s.phase === 'fight' && lowest !== null) {

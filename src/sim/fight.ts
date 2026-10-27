@@ -1,4 +1,6 @@
-import { enemyDef, type Targeting } from './data/enemies.ts';
+import type { Targeting } from './data/enemies.ts';
+import { fightDef, isMech } from './data/mechanics.ts';
+import { mechTargets, resolveMech, stepMechanics } from './mechanics.ts';
 import { isBossFloor } from './data/regions.ts';
 import { aliveHeroes, damageEnemy, damageHero, healHero, lifeFrac } from './combat.ts';
 import { floorAtk, floorGold, floorHp, floorPack, wipeCheckpoint } from './floors.ts';
@@ -21,7 +23,7 @@ export function createFight(loadout: Loadout, floor: number, seed: number, autoA
       id: stats.def.id, stats, hp: stats.maxHp, alive: true, atkCd: stats.interval * 0.5,
       shield: 0, shieldT: 0, playerWardAt: -99, poisonDps: 0, poisonT: 0, poisonTick: 0,
       recentHeal: 0, recentHealT: 0, hist: new Array<number>(HIST_LEN).fill(stats.maxHp),
-      bigHitAt: -99, bigHitDmg: 0, bloomRate: 0, bloomT: 0, hitAt: -99, healAt: -99, attackAt: -99,
+      bigHitAt: -99, bigHitDmg: 0, plagueT: 0, plagueSpreads: false, frostT: 0, frostTick: 0, bloomRate: 0, bloomT: 0, hitAt: -99, healAt: -99, attackAt: -99,
     })),
     enemies: [], nextUid: 1,
     mana: loadout.manaMax, resonance: 0, sanctuaryT: 0, anthemT: 0,
@@ -31,7 +33,7 @@ export function createFight(loadout: Loadout, floor: number, seed: number, autoA
       healed: 0, overheal: 0, absorbed: 0, perfects: 0, saves: 0, kills: 0, damage: 0, gold: 0,
       floorsCleared: 0, wipes: 0,
     },
-    events: [], histTimer: 0, downsThisFloor: 0, wallFloor: 0, wallWipes: 0, farmFloor: 0, farmLeft: 0,
+    events: [], histTimer: 0, downsThisFloor: 0, wallFloor: 0, wallWipes: 0, farmFloor: 0, farmLeft: 0, siphonT: 0,
   };
   return s;
 }
@@ -59,7 +61,7 @@ function spawnFloor(s: FightState): void {
   const A = floorAtk(s.floor);
   const G = floorGold(s.floor) * s.loadout.goldMult;
   s.enemies = floorPack(s.floor, s.seed).map((m): EnemyState => {
-    const def = enemyDef(m.id);
+    const def = fightDef(m.id);
     return {
       uid: s.nextUid++, def, maxHp: H * m.hp, hp: H * m.hp, atk: A * m.atk,
       gold: Math.max(1, Math.round(G * m.gold)), cds: def.attacks.map((a) => a.interval * (0.35 + 0.65 * next(s.rng))),
@@ -95,6 +97,7 @@ export function step(s: FightState, actions: readonly Action[] = [], dt = DT): S
     s.phaseT += dt;
     stepHeroAttacks(s, dt);
     stepEnemies(s, dt);
+    stepMechanics(s, dt);
     stepAcolytes(s, dt);
     checkFloorEnd(s);
   }
@@ -155,7 +158,7 @@ function stepHeroAttacks(s: FightState, dt: number): void {
     let dmg = h.stats.atk * (1 + h.stats.rage * (1 - lifeFrac(h)));
     if (h.shield > 0 && L.relics.has('war_banner')) dmg *= 1.4;
     if (s.anthemT > 0) dmg *= 1.3;
-    const crit = chance(s.rng, def.crit ?? 0);
+    const crit = chance(s.rng, h.stats.crit);
     if (crit) dmg *= 2;
     const targets = def.aoe
       ? s.enemies.map((e, j) => (e.alive ? j : -1)).filter((j) => j >= 0)
@@ -201,7 +204,8 @@ function stepEnemies(s: FightState, dt: number): void {
         e.windup = null;
         e.attackAt = s.t;
         s.events.push({ type: 'enemyAttack', enemy: ei, targets: w.targets, big: true });
-        for (const i of w.targets) hit(s, ei, i, w.attack.mult, true, w.attack.poison, w.attack.target === 'all');
+        if (isMech(w.attack)) resolveMech(s, ei, w.attack, w.targets);
+        else for (const i of w.targets) hit(s, ei, i, w.attack.mult, true, w.attack.poison, w.attack.target === 'all');
       }
       return;
     }
@@ -209,8 +213,9 @@ function stepEnemies(s: FightState, dt: number): void {
       e.cds[ai]! -= dt;
       if (e.cds[ai]! > 0 || e.windup) return;
       if (a.windup > 0) {
-        const targets = chooseTargets(s, a.target);
-        if (targets.length === 0) return;
+        const chosen = chooseTargets(s, a.target);
+        if (chosen.length === 0) return;
+        const targets = isMech(a) ? mechTargets(s, a, chosen) : chosen;
         e.cds[ai] = a.interval;
         e.windup = { attack: a, targets, t: 0, total: a.windup };
         s.events.push({ type: 'telegraph', enemy: ei, targets, total: a.windup, name: a.name });
@@ -282,8 +287,11 @@ function checkFloorEnd(s: FightState): void {
   else if (s.autoAdvance) s.floor++;
   s.phase = 'walk';
   s.phaseT = T.walkTime;
+  s.siphonT = 0;
   for (const h of s.heroes) {
     h.poisonT = 0;
+    h.plagueT = 0;
+    h.frostT = 0;
     if (!h.alive) {
       h.alive = true;
       h.hp = h.stats.maxHp * T.reviveOnFloorPct;
@@ -296,7 +304,10 @@ function restartAfterWipe(s: FightState): void {
   s.floor = wipeCheckpoint(s.floor);
   s.mana = s.loadout.manaMax;
   s.resonance = 0;
+  s.siphonT = 0;
   for (const h of s.heroes) {
+    h.plagueT = 0;
+    h.frostT = 0;
     h.alive = true;
     h.hp = h.stats.maxHp;
     h.shield = 0;

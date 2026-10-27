@@ -2,6 +2,7 @@ import { prayerDef } from './data/prayers.ts';
 import {
   addResonance, aliveHeroes, cleanseHero, healHero, lifeFrac, reviveHero, shieldHero,
 } from './combat.ts';
+import { siphonCast } from './mechanics.ts';
 import { chance } from './rng.ts';
 import { incomingOn, type Action, type FightState } from './state.ts';
 import { T } from './tuning.ts';
@@ -21,6 +22,7 @@ function spend(s: FightState, cost: number): boolean {
     return false;
   }
   s.mana -= cost;
+  siphonCast(s);
   return true;
 }
 

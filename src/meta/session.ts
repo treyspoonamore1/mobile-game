@@ -7,6 +7,8 @@ import { T } from '../sim/tuning.ts';
 import type { Save } from './save.ts';
 import { readyDeeds } from './deeds.ts';
 import { gainXp } from './healer.ts';
+import { rollDrop } from './gear.ts';
+import type { Item } from '../sim/data/gear.ts';
 
 /** Notifications for the UI that come from applying sim events to the save. */
 export type MetaNote =
@@ -16,7 +18,8 @@ export type MetaNote =
   | { type: 'pilgrimageReady' }
   | { type: 'prayerUnlocked'; floor: number }
   | { type: 'healerLevel'; level: number }
-  | { type: 'deedReady' };
+  | { type: 'deedReady' }
+  | { type: 'itemDrop'; item: Item; boss: boolean };
 
 export function newFight(save: Save): FightState {
   const seed = hash2(save.seed, save.pilgrimages * 7919 + save.lifetime.wipes);
@@ -113,9 +116,11 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
         }
         break;
       }
-      case 'floorClear':
+      case 'floorClear': {
         save.run.floors++;
         save.lifetime.floors++;
+        const drop = rollDrop(save, e.floor, e.boss);
+        if (drop.item) notes.push({ type: 'itemDrop', item: drop.item, boss: e.boss });
         if (e.boss) {
           save.run.bosses++;
           save.lifetime.bosses++;
@@ -133,6 +138,7 @@ export function applyEvents(save: Save, fight: FightState, events: readonly SimE
           }
         }
         break;
+      }
       default:
         break;
     }

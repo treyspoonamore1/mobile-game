@@ -188,6 +188,23 @@ function drawHero(g: CanvasRenderingContext2D, L: Layout, s: FightState, i: numb
     const a = Math.min(1, h.shieldT / 0.8) * (0.75 + 0.25 * Math.sin(now * 6));
     bubble(g, x, y - 8, 11, 11, '#8fd3ff', a);
   }
+  if (h.alive && h.plagueT > 0) {
+    // Plague: a pulsing green skull over the head.
+    const sy = y - 26 - Math.round(Math.sin(now * 6));
+    const c = Math.floor(now * 6) % 2 ? '#8be04e' : '#c8ff9a';
+    px(g, x - 3, sy, 6, 4, c);
+    px(g, x - 2, sy + 4, 4, 2, c);
+    px(g, x - 2, sy + 1, 1, 1, '#0b0d1a');
+    px(g, x + 1, sy + 1, 1, 1, '#0b0d1a');
+  }
+  if (h.alive && h.frostT > 0) {
+    // Frostbite: ice creeping up from the feet.
+    for (let k = 0; k < 5; k++) {
+      const fx = x - 7 + k * 3;
+      const fh = 2 + ((k * 7 + Math.floor(now * 3)) % 4);
+      px(g, fx, y - fh, 2, fh, k % 2 ? '#bfe8ff' : '#7fc8ff');
+    }
+  }
   if (h.alive && h.bloomT > 0) {
     // Lifebloom: green petals rising around the hero.
     for (let k = 0; k < 3; k++) {

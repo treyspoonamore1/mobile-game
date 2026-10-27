@@ -1,5 +1,6 @@
 import type { Progress } from '../sim/loadout.ts';
 import type { RelicId } from '../sim/data/relics.ts';
+import type { Item } from '../sim/data/gear.ts';
 
 export interface Tally {
   healed: number;
@@ -40,6 +41,12 @@ export interface Save {
   /** The healer's own level, from healing done. Permanent. */
   healerLevel: number;
   healerXp: number;
+  /** Unequipped gear. */
+  inventory: Item[];
+  /** Next item id, and how many items have dropped (seeds the rolls). */
+  nextItemUid: number;
+  /** Auto-salvage drops below this rarity (0 = keep everything). */
+  autoSalvageBelow: number;
   relicOffers: RelicId[][];
   run: Tally;
   lifetime: Tally;
@@ -75,11 +82,15 @@ export function newSave(seed: number): Save {
       maxFloor: 1,
       talents: {},
       deeds: {},
+      equipped: {},
     },
     bestFloor: 1,
     bossesCleared: [],
     healerLevel: 1,
     healerXp: 0,
+    inventory: [],
+    nextItemUid: 1,
+    autoSalvageBelow: 0,
     relicOffers: [],
     run: emptyTally(),
     lifetime: emptyTally(),

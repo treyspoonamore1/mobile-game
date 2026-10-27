@@ -8,12 +8,13 @@ import type { RelicId } from '../sim/data/relics.ts';
 import type { DevotionUpgradeId, GoldUpgradeId } from '../sim/data/upgrades.ts';
 import type { DeedId } from '../sim/data/deeds.ts';
 import type { TalentId } from '../sim/data/talents.ts';
+import type { Slot } from '../sim/data/gear.ts';
 import type { FightState } from '../sim/state.ts';
 
 export type SheetId = 'party' | 'healer' | 'acolytes' | 'deeds' | 'pilgrim';
 
 /** Explanations shown once when a system unlocks. */
-export type UnlockId = 'acolytes' | 'pilgrimage' | 'relics' | 'talents' | 'deeds';
+export type UnlockId = 'acolytes' | 'pilgrimage' | 'relics' | 'talents' | 'deeds' | 'gear';
 
 export type Modal =
   | { kind: 'relic' }
@@ -68,6 +69,16 @@ export interface Game {
   resetTalents(): void;
   /** Claim a Deed's next tier: its permanent bonus plus a gold payout. */
   claimDeed(id: DeedId): void;
+  /** Gear: equip a bag item on a hero (the old one returns to the bag), take one off, salvage for gold. */
+  equip(hero: HeroId, uid: number): void;
+  unequip(hero: HeroId, slot: Slot): void;
+  salvage(uid: number): void;
+  /** Merge three bag items of one slot and rarity into the next rarity. */
+  merge(uids: number[]): void;
+  mergeAll(): void;
+  autoEquip(): void;
+  /** Auto-salvage new drops below this rarity (0 = keep all). */
+  setAutoSalvage(below: number): void;
   pilgrimage(order: OrderId): void;
   setAutoAdvance(on: boolean): void;
   setSettings(s: Partial<Settings>): void;

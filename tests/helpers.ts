@@ -11,6 +11,7 @@ export function freshProgress(over: Partial<Progress> = {}): Progress {
     maxFloor: 1,
     talents: {},
     deeds: {},
+    equipped: {},
     ...over,
   };
 }
