@@ -9,8 +9,8 @@ mkdirSync(out, { recursive: true });
 const cases = [
   { name: 'judgement', floor: 10, lvl: 40, when: 'judgement' },
   { name: 'plague', floor: 20, lvl: 70, when: 'plague' },
-  { name: 'frostbite', floor: 30, lvl: 100, when: 'frost' },
-  { name: 'siphon', floor: 40, lvl: 130, when: 'siphon' },
+  { name: 'frostbite', floor: 30, lvl: 75, when: 'frost' },
+  { name: 'siphon', floor: 40, lvl: 90, when: 'siphon' },
 ];
 const browser = await chromium.launch();
 const errors = [];

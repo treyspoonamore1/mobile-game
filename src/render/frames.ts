@@ -326,7 +326,14 @@ function drawSiphon(g: CanvasRenderingContext2D, L: Layout, s: FightState, now: 
     g.fillStyle = '#c48cff';
     g.fillRect(0, y0, L.w, h);
     g.globalAlpha = 1;
-    drawText(g, `SIPHON IN ${windupLeft.toFixed(1)}s · CAST NOW, THEN WAIT`, L.w / 2, y0 + 14, { size: 14, color: '#e2b8ff', align: 'center', outline: '#0b0d1a', outlineW: 4, weight: 700 });
+    // A pill straddling the top edge of the frames, clear of the names.
+    const text = `SIPHON IN ${windupLeft.toFixed(1)}s · CAST NOW, THEN WAIT`;
+    const py = top.y - 10;
+    g.fillStyle = '#0b0d1a';
+    g.fillRect(16, py - 13, L.w - 32, 26);
+    g.fillStyle = '#2a1640';
+    g.fillRect(18, py - 11, L.w - 36, 22);
+    drawText(g, text, L.w / 2, py + 1, { size: 13, color: '#e2b8ff', align: 'center', outline: '#0b0d1a', outlineW: 3, weight: 700 });
   }
   g.restore();
 }
