@@ -5,7 +5,9 @@ import { PartySheet } from './sheets/PartySheet.tsx';
 import { DeedsSheet } from './sheets/DeedsSheet.tsx';
 import { HealerSheet } from './sheets/HealerSheet.tsx';
 import { PilgrimSheet } from './sheets/PilgrimSheet.tsx';
+import { GearPanelView } from './gear/GearPanel.tsx';
 import { Icon } from './Icon.tsx';
+import { gearPanel } from './nav.ts';
 import { SHEET_TITLES, TABS } from './status.ts';
 
 const CLOSE_MS = 200;
@@ -15,6 +17,11 @@ export function SheetHost({ game }: { game: Game }) {
   const want = game.sheet.value;
   const [shown, setShown] = useState<SheetId | null>(want);
   const [closing, setClosing] = useState(false);
+
+  // A gear panel belongs to the Party sheet: drop it when the sheet changes or closes.
+  useEffect(() => {
+    if (want !== 'party') gearPanel.value = null;
+  }, [want]);
 
   useEffect(() => {
     if (want) {
@@ -54,6 +61,7 @@ export function SheetHost({ game }: { game: Game }) {
       <div class="sheet-scroll" key={shown}>
         <SheetBody game={game} id={shown} />
       </div>
+      {shown === 'party' && gearPanel.value && <GearPanelView game={game} panel={gearPanel.value} />}
     </section>
   );
 }

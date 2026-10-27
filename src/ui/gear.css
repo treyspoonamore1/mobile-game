@@ -1,0 +1,89 @@
+/* Gear: item frames, hero gear rows, the bag, and the slot picker / item card panel. */
+
+/* Item frame: slot icon in a rarity-colored frame; empty slots are dashed. */
+.iframe {
+  --rar: #3a4170;
+  position: relative; width: 44px; height: 44px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(circle, color-mix(in srgb, var(--rar) 32%, var(--ink)) 0 38%, var(--ink) 76%);
+  box-shadow: 0 0 0 2px var(--line), inset 0 0 0 2px var(--rar), inset 0 -4px 0 rgba(0, 0, 0, 0.35);
+}
+.iframe.is-big { width: 58px; height: 58px; }
+.iframe.is-empty { background: var(--ink); box-shadow: none; outline: 2px dashed #3d4578; outline-offset: -2px; }
+.iframe .ghost { opacity: 0.22; filter: grayscale(1); }
+.iframe-up {
+  position: absolute; top: -5px; right: -5px; padding: 2px 3px 1px; font-size: 10px; line-height: 1;
+  color: #0c2a0c; background: var(--good); box-shadow: 0 0 0 2px var(--line);
+}
+
+/* Hero card gear row */
+.gear-row {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-top: 2px; padding-top: 9px;
+  border-top: 2px dashed #353c6c;
+}
+.gear-slots { display: flex; gap: 9px; flex-shrink: 0; padding: 2px; }
+.gear-slot { display: block; transition: transform 0.08s; }
+.gear-slot:active { transform: scale(0.9); }
+.gear-extras { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12px; color: var(--dim); min-width: 0; }
+.gear-extras b { color: var(--ward); }
+
+/* Bag */
+.bag-head { display: flex; flex-direction: column; gap: 10px; }
+.bag-count { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--dim); white-space: nowrap; }
+.bag-count b { font-size: 20px; color: var(--text); }
+.bag-count.is-full b { color: var(--bad); }
+.bag-actions { display: flex; gap: 4px; }
+.bag-btn { min-height: 42px; font-size: 14px; padding: 4px 9px; }
+.bag-salvage { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--dim); }
+.bag-salvage .seg-btn { min-width: 0; height: 36px; padding: 0 8px; font-size: 13px; }
+.bag-warn { margin: 0; }
+.bag-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 10px 6px; margin: 3px; }
+.bag-cell { display: flex; justify-content: center; padding: 4px 0; transition: transform 0.08s; }
+.bag-cell:active { transform: scale(0.9); }
+
+/* Panel over the Party sheet */
+.gpanel {
+  position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; background: var(--bg);
+  animation: panel-in 0.22s cubic-bezier(0.2, 0.9, 0.3, 1.05) both;
+}
+.gpanel-head {
+  display: flex; align-items: center; gap: 10px; height: 46px; flex-shrink: 0; padding: 0 12px 0 4px;
+  background: var(--panel2); border-bottom: 3px solid var(--line); box-shadow: inset 0 2px 0 var(--hl);
+}
+.gpanel-title { display: flex; flex-direction: column; min-width: 0; line-height: 1.15; }
+.gpanel-title b { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gpanel-title span { font-size: 11px; color: var(--dim); }
+.gpanel-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; touch-action: pan-y; overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 10px; padding: 6px 12px 24px;
+}
+.gpanel .modal-sub { margin: 8px 3px 0; }
+.icard { display: flex; flex-direction: column; gap: 8px; }
+.icard.is-worn { box-shadow: var(--border), inset 0 0 0 2px var(--gold), inset 0 -3px 0 var(--lo); }
+.icard-row { display: flex; align-items: center; gap: 8px; }
+.icard-row .ihead { flex: 1; min-width: 0; }
+.ihead { display: flex; align-items: center; gap: 12px; }
+.ihead-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ihead-text b { font-size: 15px; color: var(--rar); }
+.ihead-text span { font-size: 11px; color: var(--dim); }
+.istats { list-style: none; margin: 0 2px; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.istats .is-main { font-size: 15px; font-weight: 700; }
+.affix-name { color: var(--ward); margin-right: 2px; }
+.icard-btn { align-self: flex-start; min-height: 40px; font-size: 14px; }
+.icard-equip { min-width: 84px; min-height: 44px; font-size: 15px; flex-shrink: 0; }
+.cmp { display: flex; flex-wrap: wrap; gap: 2px 12px; margin: 0 2px; font-size: 12px; }
+.cmp-same { color: var(--dim); }
+.icard-empty { display: flex; align-items: center; gap: 12px; margin: 2px 3px; font-size: 13px; color: var(--dim); }
+.equip-on { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.equip-hero {
+  --accent: var(--dim);
+  display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 2px 6px; margin: 3px;
+  text-align: center !important; background: var(--panel);
+  box-shadow: var(--border), inset 0 3px 0 var(--accent), inset 0 -3px 0 var(--lo);
+}
+.equip-hero:active { transform: translateY(2px); }
+.equip-hero b { font-size: 13px; }
+.equip-hero span { font-size: 11px; }
+.icard-actions { display: flex; gap: 8px; margin-top: 4px; }
+.icard-actions .btn { flex-direction: column; gap: 0; min-height: 54px; font-size: 15px; }
+
+@keyframes panel-in { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }

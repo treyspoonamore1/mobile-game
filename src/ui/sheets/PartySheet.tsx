@@ -5,7 +5,10 @@ import type { HeroId } from '../../sim/data/heroes.ts';
 import { buildLoadout, type HeroStats, type Progress } from '../../sim/loadout.ts';
 import { T } from '../../sim/tuning.ts';
 import { dec, fmt } from '../format.ts';
+import { BagPane } from '../gear/BagPane.tsx';
+import { GearRow } from '../gear/GearBits.tsx';
 import { HeroSprite, Icon } from '../Icon.tsx';
+import { newUpgrades, partySeg, type PartySeg } from '../nav.ts';
 import { Btn, Cost, Seg, useSave } from '../widgets.tsx';
 
 /** Bulk-buy mode, kept while the app runs. */
@@ -24,15 +27,27 @@ export function PartySheet({ game }: { game: Game }) {
   const save = useSave(game);
   const now = buildLoadout(save.progress).heroes;
   const max = bulk.value === 'max' ? Infinity : bulk.value;
+  const seg = partySeg.value;
+  const segs: { value: PartySeg; label: string; dot?: boolean }[] = [
+    { value: 'heroes', label: 'Heroes' },
+    { value: 'bag', label: `Bag ${save.inventory.length}`, dot: seg !== 'bag' && newUpgrades(save) },
+  ];
   return (
     <div class="sheet-body">
-      <div class="row-between">
-        <p class="hint-text">Level up heroes so they hit harder and last longer.</p>
-        <Seg game={game} value={bulk.value} options={BULK_OPTS} onChange={(v) => (bulk.value = v)} />
-      </div>
-      {now.map((h) => (
-        <HeroCard key={h.def.id} game={game} stats={h} max={max} />
-      ))}
+      <Seg game={game} class="seg-full" value={seg} options={segs} onChange={(v) => (partySeg.value = v)} />
+      {seg === 'bag' ? (
+        <BagPane game={game} />
+      ) : (
+        <>
+          <div class="row-between">
+            <p class="hint-text">Level heroes up, and tap a slot to change their gear.</p>
+            <Seg game={game} value={bulk.value} options={BULK_OPTS} onChange={(v) => (bulk.value = v)} />
+          </div>
+          {now.map((h) => (
+            <HeroCard key={h.def.id} game={game} stats={h} max={max} />
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -79,6 +94,7 @@ function HeroCard({ game, stats, max }: { game: Game; stats: HeroStats; max: num
           </Btn>
         </div>
       </div>
+      <GearRow game={game} hero={id} />
     </article>
   );
 }

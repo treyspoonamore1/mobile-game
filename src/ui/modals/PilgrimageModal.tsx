@@ -33,7 +33,7 @@ export function PilgrimageModal({ game }: { game: Game }) {
             <li>Gold</li>
             <li>Hero levels</li>
             <li>Spell &amp; Acolyte upgrades</li>
-            <li>Relics</li>
+            <li>Relics and gear</li>
             <li>Floor (back to {startFloor(save)})</li>
           </ul>
         </div>

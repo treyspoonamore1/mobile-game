@@ -2,22 +2,27 @@
 import { signal } from '@preact/signals';
 import type { Game, Hint, Modal, SheetId, Toast, UnlockId } from '../app/game.ts';
 import { claimDeed } from '../meta/deeds.ts';
+import * as gear from '../meta/gear.ts';
 import { learnTalent, resetTalents } from '../meta/healer.ts';
 import { pilgrimage } from '../meta/pilgrimage.ts';
 import { newSave, parseSave, type Save } from '../meta/save.ts';
 import { buyDevotionUpgrade, buyGoldUpgrade, buyHero } from '../meta/shop.ts';
 import { BONUS_LABEL, DEEDS, deedDef } from '../sim/data/deeds.ts';
+import { itemName, SLOTS, type Rarity } from '../sim/data/gear.ts';
+import { rollItem } from '../sim/gear.ts';
+import { makeRng } from '../sim/rng.ts';
 import { HERO_IDS } from '../sim/data/heroes.ts';
 import type { OrderId } from '../sim/data/orders.ts';
 import { RELICS } from '../sim/data/relics.ts';
 import { DEVOTION_UPGRADES, GOLD_UPGRADES } from '../sim/data/upgrades.ts';
 import type { FightState } from '../sim/state.ts';
-import { healerSeg } from './nav.ts';
+import { healerSeg, partySeg } from './nav.ts';
 import { TABS } from './status.ts';
 
 /**
  * Build a save from query params: gold, floor, max, best, devotion, pilg, lv, up, dev, relics, offers, order, auto,
- * hlv (healer level), hxp, tal (1 = some talents learned, 2 = a deep build), claimed (tiers claimed per Deed), fresh (zero lifetime stats).
+ * hlv (healer level), hxp, tal (1 = some talents learned, 2 = a deep build), claimed (tiers claimed per Deed), fresh (zero lifetime stats),
+ * gear (1 = some items worn), bag (number of bag items, mixed rarities), salv (auto-salvage below).
  */
 export function saveFromParams(q: URLSearchParams): Save {
   const num = (k: string, d: number) => (q.has(k) ? Number(q.get(k)) : d);
@@ -50,9 +55,25 @@ export function saveFromParams(q: URLSearchParams): Save {
   const tal = num('tal', 0);
   if (tal >= 1) Object.assign(s.progress.talents, { swift_hands: 3, triage: 1, thick_ward: 2, deep_breath: 1 });
   if (tal >= 2) Object.assign(s.progress.talents, { swift_hands: 5, triage: 3, second_touch: 2, overflow: 1, battle_hymn: 2 });
+  addGear(s, num('gear', 0), num('bag', 0));
+  s.autoSalvageBelow = num('salv', 0);
   const claimed = num('claimed', 0);
   if (claimed > 0) for (const d of DEEDS) s.progress.deeds[d.id] = Math.min(d.tiers.length, claimed);
   return s;
+}
+
+/** Worn items for the first heroes, and a bag of mixed rarities (with a mergeable set). */
+function addGear(s: Save, worn: number, bag: number): void {
+  const rng = makeRng(77);
+  const floor = Math.max(1, s.floor);
+  const roll = (rarity: number, slot = SLOTS[s.nextItemUid % 3]!) => rollItem(rng, s.nextItemUid++, floor, rarity as Rarity, slot);
+  if (worn > 0) {
+    s.progress.equipped.tomas = { weapon: roll(1, 'weapon'), armor: roll(2, 'armor'), trinket: roll(0, 'trinket') };
+    s.progress.equipped.brann = { weapon: roll(3, 'weapon'), armor: roll(0, 'armor') };
+    s.progress.equipped.ilse = { trinket: roll(4, 'trinket') };
+  }
+  const pattern = [0, 0, 0, 1, 2, 0, 1, 3, 0, 1, 2, 4];
+  for (let i = 0; i < bag; i++) s.inventory.push(roll(pattern[i % pattern.length]!, SLOTS[i < 3 ? 0 : i % 3]!));
 }
 
 export function makeMockGame(save: Save, q: URLSearchParams): Game {
@@ -146,6 +167,35 @@ export function makeMockGame(save: Save, q: URLSearchParams): Game {
       toast(`${d.name}: +${Math.round(d.per * 100)}% ${BONUS_LABEL[d.bonus]}`, 'gold');
       bump();
     },
+    equip: (hero, uid) => {
+      if (gear.equip(save, hero, uid)) bump();
+    },
+    unequip: (hero, slot) => {
+      if (gear.unequip(save, hero, slot)) bump();
+    },
+    salvage: (uid) => {
+      const g = gear.salvageItem(save, uid);
+      if (g !== null) toast(`Salvaged for ${Math.round(g)} gold`, 'gold');
+      bump();
+    },
+    merge: (uids) => {
+      const out = gear.merge(save, uids);
+      if (out) toast(`Merged: ${itemName(out)}`, 'gold');
+      bump();
+    },
+    mergeAll: () => {
+      const made = gear.mergeAll(save);
+      toast(`Merged ${made.length} item${made.length === 1 ? '' : 's'}`, 'gold');
+      bump();
+    },
+    autoEquip: () => {
+      gear.autoEquip(save);
+      bump();
+    },
+    setAutoSalvage: (below) => {
+      save.autoSalvageBelow = below;
+      bump();
+    },
     uiTap: (ok = true) => console.debug('uiTap', ok),
   };
   // Passive income so numbers move like the real game.
@@ -163,6 +213,7 @@ function applyParams(game: Game, q: URLSearchParams): void {
   if (sheet && TABS.some((t) => t.id === sheet)) game.sheet.value = sheet as SheetId;
   const seg = q.get('seg');
   if (seg === 'talents' || seg === 'spells' || seg === 'relics') healerSeg.value = seg;
+  if (seg === 'heroes' || seg === 'bag') partySeg.value = seg;
   const m = q.get('modal');
   if (m === 'offline') {
     game.modal.value = {

@@ -4,6 +4,7 @@ import type { Save } from '../meta/save.ts';
 import { readyDeeds } from '../meta/deeds.ts';
 import { unspentPoints } from '../meta/healer.ts';
 import { canPilgrimage } from '../meta/pilgrimage.ts';
+import { newUpgrades } from './nav.ts';
 import { devotionUpgradeCost, goldUpgradeCost, goldUpgradeVisible, heroCost } from '../meta/shop.ts';
 import { HERO_IDS } from '../sim/data/heroes.ts';
 import type { IconName } from '../sim/data/icons.ts';
@@ -78,7 +79,7 @@ export function hasBadge(save: Save, tab: TabId): boolean {
   if (lockReason(save, tab)) return false;
   switch (tab) {
     case 'party':
-      return HERO_IDS.some((id) => heroCost(id, save.progress.heroLevels[id]) <= save.gold);
+      return HERO_IDS.some((id) => heroCost(id, save.progress.heroLevels[id]) <= save.gold) || newUpgrades(save);
     case 'healer':
       return segBadge.talents(save) || segBadge.relics(save);
     case 'acolytes':

@@ -1,5 +1,5 @@
 import type { Game, SheetId, UnlockId } from '../../app/game.ts';
-import { openHealer, type HealerSeg } from '../nav.ts';
+import { openHealer, openParty, type HealerSeg } from '../nav.ts';
 import type { IconName } from '../../sim/data/icons.ts';
 import { HeroSprite, Icon } from '../Icon.tsx';
 import { Btn } from '../widgets.tsx';
@@ -62,6 +62,17 @@ const UNLOCKS: Record<UnlockId, UnlockDef> = {
     sheet: 'deeds',
     button: 'Claim it',
   },
+  gear: {
+    icon: 'sword',
+    title: 'Loot!',
+    lines: [
+      'Cleared floors sometimes drop gear, and bosses always do. Each hero has a weapon, armor and trinket slot.',
+      'Merge three items of the same slot and rarity into one rarer item, or salvage spares for gold.',
+      'Gear lasts until your next Pilgrimage.',
+    ],
+    sheet: 'party',
+    button: 'Open the bag',
+  },
   pilgrimage: {
     icon: 'pilgrim',
     title: 'Pilgrimage unlocked',
@@ -100,6 +111,7 @@ export function UnlockModal({ game, id }: { game: Game; id: UnlockId }) {
           onPress={() => {
             game.closeModal();
             if (u.sheet === 'healer') openHealer(game, u.seg);
+            else if (u.sheet === 'party') openParty(game, 'bag');
             else game.openSheet(u.sheet);
           }}
         >

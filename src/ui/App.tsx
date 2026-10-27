@@ -5,6 +5,7 @@ import './ui.css';
 import './sheets.css';
 import './modals.css';
 import './progression.css';
+import './gear.css';
 import type { Game } from '../app/game.ts';
 import { ModalHost } from './modals/ModalHost.tsx';
 import { NavBar } from './NavBar.tsx';

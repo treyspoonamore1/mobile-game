@@ -129,3 +129,13 @@ describe('boss mechanics', () => {
     expect(mana - s.mana).toBeGreaterThan(s.loadout.manaMax * T.siphonDrain * 0.9);
   });
 });
+
+describe('upgrade arrows', () => {
+  it('only the items that would be worn count as upgrades', async () => {
+    const { isUpgrade } = await import('../src/meta/gear.ts');
+    const s = newSave(1);
+    s.inventory = [1, 2, 3, 4, 5, 6].map((u) => item(u, { main: u / 10 }));
+    // Four empty weapon slots: the four best weapons are upgrades, the two weakest aren't.
+    expect(s.inventory.filter((it) => isUpgrade(s, it)).map((it) => it.uid)).toEqual([3, 4, 5, 6]);
+  });
+});

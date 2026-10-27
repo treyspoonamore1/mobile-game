@@ -135,10 +135,15 @@ export function autoEquip(save: Save): number {
   return moved;
 }
 
-/** True if this bag item would beat what some hero wears in its slot. */
+/**
+ * True if this bag item would actually be worn: it fills an empty slot (only the best few bag items
+ * for that slot count, one per empty slot) or beats the weakest item worn in that slot.
+ */
 export function isUpgrade(save: Save, it: Item): boolean {
-  return HERO_IDS.some((h) => {
-    const worn = save.progress.equipped[h]?.[it.slot];
-    return !worn || itemScore(it) > itemScore(worn);
-  });
+  const worn = HERO_IDS.map((h) => save.progress.equipped[h]?.[it.slot]);
+  const empty = worn.filter((w) => !w).length;
+  const better = save.inventory.filter((x) => x.slot === it.slot && itemScore(x) > itemScore(it)).length;
+  if (empty > 0) return better < empty;
+  const weakest = Math.min(...worn.map((w) => itemScore(w!)));
+  return itemScore(it) > weakest && better < HERO_IDS.length;
 }
